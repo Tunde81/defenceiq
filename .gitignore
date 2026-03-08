@@ -13,3 +13,5 @@ dist/
 build/
 .pytest_cache/
 instance/
+*.bak
+static/reports/*.pdf
