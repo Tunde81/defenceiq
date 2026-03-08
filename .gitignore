@@ -15,3 +15,5 @@ build/
 instance/
 *.bak
 static/reports/*.pdf
+*.bak
+static/reports/*.pdf
