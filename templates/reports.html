@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Reports{% endblock %}
+{% block page_title %}Compliance Reports{% endblock %}
+{% block content %}
+<div style="display:grid;grid-template-columns:1fr 2fr;gap:1.25rem">
+    <div class="card">
+        <div class="card-header"><span class="card-title">Generate Report</span></div>
+        {% if org.plan in ['professional', 'enterprise'] %}
+        <form method="POST" action="{{ url_for('generate_report') }}">
+            <div class="form-group">
+                <label class="form-label">Report Type</label>
+                <select name="report_type" class="form-control">
+                    <option value="CBN Monthly Fraud Report">CBN Monthly Fraud Report</option>
+                    <option value="NDIC Quarterly Report">NDIC Quarterly Report</option>
+                    <option value="EFCC Intelligence Report">EFCC Intelligence Report</option>
+                    <option value="Internal Risk Report">Internal Risk Report</option>
+                    <option value="Board Report">Board Report</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Period Start</label>
+                <input type="date" name="period_start" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Period End</label>
+                <input type="date" name="period_end" class="form-control" required>
+            </div>
+            <div style="background:rgba(0,212,255,.06);border:1px solid rgba(0,212,255,.2);border-radius:8px;padding:.75rem;font-size:.78rem;color:var(--cyan);font-family:'JetBrains Mono',monospace;margin-bottom:1rem;line-height:1.6">
+                ≡ Generates a PDF containing all fraud cases in the selected period, AI risk scores, and executive summary.
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">≡ Generate PDF →</button>
+        </form>
+        {% else %}
+        <div style="text-align:center;padding:2rem;color:var(--text-muted)">
+            <div style="font-size:2rem;margin-bottom:.75rem;opacity:.3">≡</div>
+            <div style="font-size:.84rem;color:var(--text-secondary);margin-bottom:1rem">Compliance reports require Professional plan.</div>
+            <a href="{{ url_for('billing') }}" class="btn btn-primary btn-sm">↑ Upgrade Plan</a>
+        </div>
+        {% endif %}
+    </div>
+    <div class="card">
+        <div class="card-header"><span class="card-title">Generated Reports ({{ reports|length }})</span></div>
+        {% if reports %}
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Report Type</th><th>Period</th><th>Generated</th><th>Download</th></tr></thead>
+                <tbody>
+                {% for report in reports %}
+                <tr>
+                    <td style="font-weight:600;font-size:.82rem;color:var(--text-primary)">{{ report.report_type }}</td>
+                    <td style="font-size:.78rem;font-family:'JetBrains Mono',monospace;color:var(--text-muted)">{{ report.period_start }} → {{ report.period_end }}</td>
+                    <td style="font-size:.75rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace">{{ report.generated_at.strftime('%d %b %Y %H:%M') }}</td>
+                    <td>{% if report.file_path %}<a href="{{ url_for('download_report', report_id=report.id) }}" class="btn btn-primary btn-sm">⬇ PDF</a>{% else %}<span style="color:var(--text-muted);font-size:.75rem;font-family:'JetBrains Mono',monospace">—</span>{% endif %}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div style="text-align:center;padding:4rem;color:var(--text-muted)">
+            <div style="font-size:2rem;margin-bottom:.75rem;opacity:.3">≡</div>
+            <div style="font-weight:600;color:var(--text-secondary);margin-bottom:.5rem;font-family:'JetBrains Mono',monospace">// NO REPORTS YET</div>
+            <div style="font-size:.84rem">Generate your first compliance report using the form.</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

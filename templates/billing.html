@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Billing{% endblock %}
+{% block page_title %}Billing & Plans{% endblock %}
+{% block content %}
+<div style="max-width:900px">
+    <div class="card" style="margin-bottom:1.25rem">
+        <div class="card-header"><span class="card-title">Current Plan</span></div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+            <div style="display:flex;align-items:center;gap:1rem">
+                <div style="width:48px;height:48px;border-radius:10px;background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.25);display:flex;align-items:center;justify-content:center;font-size:1.4rem">◬</div>
+                <div>
+                    <div style="font-size:1.1rem;font-weight:700;color:var(--white);font-family:'JetBrains Mono',monospace">{{ org.plan.upper() }}</div>
+                    <div style="font-size:.78rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace">{{ org.name }} // active</div>
+                </div>
+            </div>
+            <span class="plan-pill plan-{{ org.plan }}">{{ org.plan }}</span>
+        </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem">
+        {% for plan_name, price, features, highlight in [
+            ('Free', '£0', ['10 cases/month', '1 user', 'Email alerts', 'Training access', '—', '—', '—'], false),
+            ('Professional', '£49', ['500 cases/month', '10 users', 'AI risk scoring', 'Compliance PDFs', 'API access', 'Slack/Teams alerts', 'Priority support'], true),
+            ('Enterprise', '£199', ['Unlimited cases', 'Unlimited users', 'All Pro features', 'Custom branding', 'Dedicated support', 'Full audit logs', 'SLA guarantee'], false)
+        ] %}
+        <div class="card" style="{% if highlight %}border-color:rgba(0,212,255,.4);box-shadow:0 0 20px rgba(0,212,255,.08){% endif %};display:flex;flex-direction:column;position:relative">
+            {% if highlight %}<div style="position:absolute;top:-1px;left:50%;transform:translateX(-50%);background:var(--cyan-dim);color:var(--white);font-size:.62rem;font-weight:700;padding:.2rem .75rem;border-radius:0 0 6px 6px;font-family:'JetBrains Mono',monospace;letter-spacing:.08em">RECOMMENDED</div>{% endif %}
+            <div style="text-align:center;margin-bottom:1.25rem;padding-top:{% if highlight %}.75rem{% else %}0{% endif %}">
+                <div style="font-size:.78rem;font-weight:700;color:var(--text-muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.1em;margin-bottom:.5rem">{{ plan_name }}</div>
+                <div style="font-size:2.25rem;font-weight:700;color:var(--white);font-family:'JetBrains Mono',monospace">{{ price }}<span style="font-size:.875rem;color:var(--text-muted);font-weight:400">/mo</span></div>
+            </div>
+            <div class="glow-divider"></div>
+            <div style="flex:1;margin-bottom:1.25rem">
+                {% for feature in features %}
+                <div style="display:flex;align-items:center;gap:.5rem;padding:.35rem 0;font-size:.82rem;{% if feature == '—' %}color:var(--text-muted);{% else %}color:var(--text-secondary);{% endif %}border-bottom:1px solid rgba(30,51,84,.3)">
+                    <span style="color:{% if feature == '—' %}var(--text-muted){% else %}var(--green){% endif %};font-size:.7rem;flex-shrink:0;font-family:'JetBrains Mono',monospace">{% if feature == '—' %}—{% else %}✓{% endif %}</span>
+                    {{ feature if feature != '—' else 'Not included' }}
+                </div>
+                {% endfor %}
+            </div>
+            {% if org.plan == plan_name.lower() %}
+            <div class="btn btn-secondary btn-sm" style="justify-content:center;cursor:default;opacity:.6">✓ Current Plan</div>
+            {% else %}
+            <button class="btn {% if highlight %}btn-primary{% else %}btn-secondary{% endif %} btn-sm" style="justify-content:center" onclick="alert('Contact sales@defenceiq.io to upgrade to {{ plan_name }}.')">
+                {% if price == '£0' %}Downgrade{% else %}↑ Upgrade to {{ plan_name }}{% endif %}
+            </button>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

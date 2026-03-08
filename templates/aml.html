@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}AML Transaction Monitoring — DefenceIQ{% endblock %}
+{% block content %}
+<div style="max-width:1200px;margin:0 auto;padding:2rem;">
+
+  <!-- Header + stats -->
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem;">
+    <div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.15em;margin-bottom:.4rem;opacity:.7;">// Compliance</div>
+      <h1 style="font-family:'Syne',sans-serif;font-size:1.75rem;font-weight:800;letter-spacing:-.02em;">AML Transaction Monitoring</h1>
+      <p style="font-size:.85rem;color:var(--text2);margin-top:.35rem;font-weight:300;">10-rule screening engine: structuring, velocity, jurisdiction risk, round amounts, suspicious patterns.</p>
+    </div>
+    <a href="{{ url_for('aml_add') }}" style="display:inline-flex;align-items:center;gap:.5rem;background:linear-gradient(135deg,#0f3460,#16213e);border:1px solid var(--cyan);border-radius:8px;padding:.65rem 1.25rem;color:var(--cyan);font-family:'JetBrains Mono',monospace;font-size:.78rem;font-weight:700;letter-spacing:.08em;text-decoration:none;transition:all .2s;" onmouseover="this.style.background='rgba(0,212,255,.1)'" onmouseout="this.style.background='linear-gradient(135deg,#0f3460,#16213e)'">
+      + ADD TRANSACTION
+    </a>
+  </div>
+
+  <!-- Stats row -->
+  {% if stats %}
+  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:1rem;margin-bottom:2rem;">
+    {% for label,value,color,sub in [
+      ('Total Transactions', stats.total, '#06b6d4', ''),
+      ('High Risk', stats.high_risk, '#ef4444', 'critical + high'),
+      ('Pending Review', stats.pending_review, '#f59e0b', 'unreviewed alerts'),
+      ('SARs Filed', stats.sar_count, '#8b5cf6', 'suspicious activity reports'),
+      ('Total Value', '£{:,.0f}'.format(stats.total_value), '#10b981', 'monitored'),
+    ] %}
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1rem;text-align:center;">
+      <div style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:{{ color }};">{{ value }}</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-top:.2rem;">{{ label }}</div>
+      {% if sub %}<div style="font-size:.6rem;color:var(--text3);margin-top:.15rem;opacity:.6;">{{ sub }}</div>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Transaction table -->
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;opacity:.8;">// Transactions ({{ transactions|length }})</div>
+      <div style="display:flex;gap:.5rem;">
+        {% for label,val in [('All',''),('Critical','critical'),('High','high'),('Pending','pending')] %}
+        <a href="?filter={{ val }}" style="font-size:.65rem;font-family:'JetBrains Mono',monospace;padding:.25rem .6rem;border-radius:4px;text-decoration:none;
+          {% if current_filter == val %}background:rgba(0,212,255,.15);color:var(--cyan);border:1px solid rgba(0,212,255,.3);
+          {% else %}background:transparent;color:var(--text3);border:1px solid var(--border);{% endif %}">{{ label }}</a>
+        {% endfor %}
+      </div>
+    </div>
+    {% if transactions %}
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:.78rem;">
+        <thead><tr style="border-bottom:1px solid var(--border);">
+          {% for h in ['Ref','Date','Amount','Sender','Receiver','Type','Risk','Flags','Status',''] %}
+          <th style="text-align:left;padding:.5rem .75rem;font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;font-weight:600;white-space:nowrap;">{{ h }}</th>
+          {% endfor %}
+        </tr></thead>
+        <tbody>
+        {% for t in transactions %}
+        {% set rc = {'critical':'#ef4444','high':'#f97316','medium':'#f59e0b','low':'#3b82f6','clean':'#10b981'}.get(t.risk_level,'#6b7280') %}
+        <tr style="border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer;" onclick="window.location='{{ url_for('aml_detail', txn_id=t.id) }}'" onmouseover="this.style.background='rgba(255,255,255,.02)'" onmouseout="this.style.background='transparent'">
+          <td style="padding:.6rem .75rem;font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--cyan);">{{ t.txn_ref }}</td>
+          <td style="padding:.6rem .75rem;color:var(--text3);font-family:'JetBrains Mono',monospace;font-size:.72rem;white-space:nowrap;">{{ t.txn_date.strftime('%d %b %Y') }}</td>
+          <td style="padding:.6rem .75rem;font-weight:700;color:var(--text1);font-family:'JetBrains Mono',monospace;white-space:nowrap;">
+            {% if t.currency != 'GBP' and t.amount_gbp %}
+              £{{ '{:,.0f}'.format(t.amount_gbp) }}<br><span style="font-size:.65rem;color:var(--text3);">{{ t.currency }} {{ '{:,.0f}'.format(t.amount) }}</span>
+            {% else %}
+              £{{ '{:,.0f}'.format(t.amount) }}
+            {% endif %}
+          </td>
+          <td style="padding:.6rem .75rem;color:var(--text2);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ t.sender_name or '—' }}<br><span style="font-size:.65rem;color:var(--text3);">{{ t.sender_country or '' }}</span></td>
+          <td style="padding:.6rem .75rem;color:var(--text2);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ t.receiver_name or '—' }}<br><span style="font-size:.65rem;color:var(--text3);">{{ t.receiver_country or '' }}</span></td>
+          <td style="padding:.6rem .75rem;color:var(--text3);font-family:'JetBrains Mono',monospace;font-size:.72rem;">{{ t.txn_type or '—' }}</td>
+          <td style="padding:.6rem .75rem;">
+            <span style="font-size:.7rem;font-weight:700;color:{{ rc }};font-family:'JetBrains Mono',monospace;text-transform:uppercase;">{{ t.risk_level }}</span>
+            <div style="font-size:.65rem;color:{{ rc }};font-family:'JetBrains Mono',monospace;">{{ t.risk_score }}/100</div>
+          </td>
+          <td style="padding:.6rem .75rem;">
+            {% set flags = t.flags if t.flags is iterable and t.flags is not string else [] %}
+            {% set flag_list = flags|list %}
+            {% if flag_list|length > 0 %}
+            <span style="font-size:.7rem;font-weight:700;padding:.2rem .45rem;border-radius:4px;background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.2);font-family:'JetBrains Mono',monospace;">{{ flag_list|length }} flag{% if flag_list|length != 1 %}s{% endif %}</span>
+            {% else %}
+            <span style="font-size:.7rem;color:var(--text3);font-family:'JetBrains Mono',monospace;">—</span>
+            {% endif %}
+          </td>
+          <td style="padding:.6rem .75rem;">
+            {% if t.sar_filed %}<span style="font-size:.65rem;font-weight:700;padding:.15rem .4rem;border-radius:3px;background:rgba(139,92,246,.1);color:#8b5cf6;border:1px solid rgba(139,92,246,.2);font-family:'JetBrains Mono',monospace;">SAR FILED</span>
+            {% elif t.reviewed %}<span style="font-size:.65rem;font-weight:700;padding:.15rem .4rem;border-radius:3px;background:rgba(16,185,129,.1);color:#10b981;border:1px solid rgba(16,185,129,.2);font-family:'JetBrains Mono',monospace;">REVIEWED</span>
+            {% elif t.risk_level in ('critical','high') %}<span style="font-size:.65rem;font-weight:700;padding:.15rem .4rem;border-radius:3px;background:rgba(245,158,11,.1);color:#f59e0b;border:1px solid rgba(245,158,11,.2);font-family:'JetBrains Mono',monospace;">NEEDS REVIEW</span>
+            {% else %}<span style="font-size:.65rem;color:var(--text3);font-family:'JetBrains Mono',monospace;">—</span>{% endif %}
+          </td>
+          <td style="padding:.6rem .75rem;" onclick="event.stopPropagation()">
+            <a href="{{ url_for('aml_detail', txn_id=t.id) }}" style="font-size:.7rem;font-family:'JetBrains Mono',monospace;color:var(--cyan);text-decoration:none;padding:.2rem .5rem;border:1px solid rgba(0,212,255,.2);border-radius:4px;" onmouseover="this.style.background='rgba(0,212,255,.1)'" onmouseout="this.style.background='transparent'">View →</a>
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:4rem;color:var(--text3);">
+      <div style="font-size:2.5rem;margin-bottom:.75rem;opacity:.3;">⟳</div>
+      <div style="font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;margin-bottom:.5rem;">No transactions yet</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.75rem;">Add your first transaction to begin AML monitoring.</div>
+      <a href="{{ url_for('aml_add') }}" style="display:inline-block;margin-top:1.25rem;background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.3);border-radius:8px;padding:.6rem 1.5rem;color:var(--cyan);font-family:'JetBrains Mono',monospace;font-size:.78rem;font-weight:700;text-decoration:none;">+ Add First Transaction</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

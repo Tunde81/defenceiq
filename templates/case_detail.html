@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}{{ case.case_ref }}{% endblock %}
+{% block page_title %}{{ case.case_ref }}{% endblock %}
+{% block content %}
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:1.25rem">
+    <div style="display:flex;flex-direction:column;gap:1.25rem">
+        <!-- CASE INFO -->
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <div style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--cyan);font-size:1rem;text-shadow:0 0 8px var(--cyan-glow)">{{ case.case_ref }}</div>
+                    <div style="font-size:.72rem;color:var(--text-muted);margin-top:.2rem;font-family:'JetBrains Mono',monospace">SUBMITTED {{ case.created_at.strftime('%d %B %Y at %H:%M UTC') }}</div>
+                </div>
+                <div style="display:flex;gap:.5rem">
+                    <span class="badge badge-{{ case.severity }}">{{ case.severity }}</span>
+                    <span class="badge badge-{{ case.status.replace('_','-') }}">{{ case.status.replace('_',' ') }}</span>
+                </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.875rem">
+                {% for label, value in [('Indicator Type', case.indicator_type), ('Indicator Value', case.indicator_value), ('Fraud Type', case.fraud_type), ('Financial Impact', (case.currency + ' ' + '{:,.2f}'.format(case.amount_lost)) if case.amount_lost else 'Not reported')] %}
+                <div style="background:var(--bg-input);border:1px solid var(--border);border-radius:8px;padding:.875rem">
+                    <div style="font-size:.65rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.1em;font-family:'JetBrains Mono',monospace;margin-bottom:.4rem">{{ label }}</div>
+                    <div style="font-weight:600;color:var(--text-primary);font-family:'JetBrains Mono',monospace;font-size:.875rem">{{ value or '—' }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% if case.description %}
+            <div style="margin-top:.875rem;padding-top:.875rem;border-top:1px solid var(--border)">
+                <div style="font-size:.65rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.1em;font-family:'JetBrains Mono',monospace;margin-bottom:.5rem">Description</div>
+                <div style="font-size:.875rem;color:var(--text-secondary);line-height:1.7">{{ case.description }}</div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- AI ASSESSMENT -->
+        {% if risk %}
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">◎ AI Risk Assessment</span>
+                <span style="font-size:.7rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace">{{ risk.created_at.strftime('%d %b %Y %H:%M') }}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:1.5rem;margin-bottom:1.25rem">
+                <div style="text-align:center;min-width:70px">
+                    <div style="font-size:3rem;font-weight:700;line-height:1;font-family:'JetBrains Mono',monospace;color:{% if risk.score >= 75 %}var(--red){% elif risk.score >= 50 %}var(--amber){% else %}var(--green){% endif %};text-shadow:0 0 20px {% if risk.score >= 75 %}var(--red){% elif risk.score >= 50 %}var(--amber){% else %}var(--green){% endif %}">{{ risk.score|int }}</div>
+                    <div style="font-size:.65rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace">RISK SCORE</div>
+                </div>
+                <div style="flex:1">
+                    <div style="height:8px;background:var(--bg-input);border-radius:100px;overflow:hidden;border:1px solid var(--border)">
+                        <div style="height:100%;width:{{ risk.score }}%;background:{% if risk.score >= 75 %}var(--red){% elif risk.score >= 50 %}var(--amber){% else %}var(--green){% endif %};border-radius:100px;box-shadow:0 0 8px {% if risk.score >= 75 %}var(--red){% elif risk.score >= 50 %}var(--amber){% else %}var(--green){% endif %};transition:width .5s"></div>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;font-size:.65rem;color:var(--text-muted);margin-top:.3rem;font-family:'JetBrains Mono',monospace"><span>0 — CLEAN</span><span>100 — CRITICAL</span></div>
+                </div>
+                <span class="badge badge-{{ risk.risk_level }}">{{ risk.risk_level }}</span>
+            </div>
+            {% if risk.reasoning %}
+            <div style="background:var(--bg-input);border:1px solid var(--border);border-radius:8px;padding:1rem">
+                <div style="font-size:.65rem;font-weight:600;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;font-family:'JetBrains Mono',monospace;margin-bottom:.5rem">// AI Reasoning</div>
+                <div style="font-size:.875rem;color:var(--text-secondary);line-height:1.75">{{ risk.reasoning }}</div>
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="card" style="text-align:center;padding:2rem">
+            <div style="font-size:2rem;margin-bottom:.75rem;opacity:.4">◎</div>
+            <div style="font-weight:600;color:var(--text-secondary);margin-bottom:.35rem;font-family:'JetBrains Mono',monospace">// AI RISK SCORING</div>
+            <div style="font-size:.84rem;color:var(--text-muted);margin-bottom:1.25rem">{% if current_user.organisation.plan == 'free' %}Upgrade to Professional to enable AI risk scoring{% else %}Case not yet scored{% endif %}</div>
+            {% if current_user.organisation.plan != 'free' %}
+            <button onclick="scoreCase({{ case.id }})" class="btn btn-primary btn-sm" id="score-btn">◎ Score with AI →</button>
+            {% else %}
+            <a href="{{ url_for('billing') }}" class="btn btn-primary btn-sm">↑ Upgrade Plan</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div style="display:flex;flex-direction:column;gap:1.25rem">
+        <div class="card">
+            <div class="card-header"><span class="card-title">Update Case</span></div>
+            <form method="POST" action="{{ url_for('update_case', case_id=case.id) }}">
+                <div class="form-group">
+                    <label class="form-label">Status</label>
+                    <select name="status" class="form-control">
+                        <option value="open" {% if case.status=='open' %}selected{% endif %}>Open</option>
+                        <option value="investigating" {% if case.status=='investigating' %}selected{% endif %}>Investigating</option>
+                        <option value="resolved" {% if case.status=='resolved' %}selected{% endif %}>Resolved</option>
+                        <option value="false_positive" {% if case.status=='false_positive' %}selected{% endif %}>False Positive</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Severity</label>
+                    <select name="severity" class="form-control">
+                        <option value="low" {% if case.severity=='low' %}selected{% endif %}>Low</option>
+                        <option value="medium" {% if case.severity=='medium' %}selected{% endif %}>Medium</option>
+                        <option value="high" {% if case.severity=='high' %}selected{% endif %}>High</option>
+                        <option value="critical" {% if case.severity=='critical' %}selected{% endif %}>Critical</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm" style="width:100%;justify-content:center">Update →</button>
+            </form>
+        </div>
+        <div class="card">
+            <div class="card-header"><span class="card-title">Case Metadata</span></div>
+            <div style="display:flex;flex-direction:column;gap:.6rem">
+                {% for label, value in [('Submitted by', case.submitter.full_name if case.submitter else '—'), ('Created', case.created_at.strftime('%d %b %Y')), ('Updated', case.updated_at.strftime('%d %b %Y'))] %}
+                <div style="display:flex;justify-content:space-between;font-size:.8rem">
+                    <span style="color:var(--text-muted);font-family:'JetBrains Mono',monospace;font-size:.72rem">{{ label }}</span>
+                    <span style="font-weight:500;color:var(--text-primary)">{{ value }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <a href="{{ url_for('threat_intel') }}" class="btn btn-secondary btn-sm" style="justify-content:center">◎ Scan Indicator</a>
+        <a href="{{ url_for('cases') }}" class="btn btn-secondary btn-sm" style="justify-content:center">← Back to Cases</a>
+    </div>
+</div>
+<script>
+async function scoreCase(caseId) {
+    const btn = document.getElementById('score-btn');
+    btn.textContent = '◎ Scoring...';
+    btn.disabled = true;
+    try {
+        const res = await fetch(`/cases/${caseId}/score`, {method:'POST'});
+        const data = await res.json();
+        if (data.score !== undefined) { location.reload(); }
+        else { btn.textContent = '✗ Error — try again'; btn.disabled = false; }
+    } catch(e) { btn.textContent = '✗ Error — try again'; btn.disabled = false; }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% block title %}Phishing & Domain Alerts — DefenceIQ{% endblock %}
+{% block content %}
+<div style="max-width:1100px;margin:0 auto;padding:2rem;">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem;">
+    <div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.15em;margin-bottom:.4rem;opacity:.7;">// Intelligence</div>
+      <h1 style="font-family:'Syne',sans-serif;font-size:1.75rem;font-weight:800;letter-spacing:-.02em;">Phishing & Domain Alerts</h1>
+      <p style="font-size:.85rem;color:var(--text2);margin-top:.35rem;font-weight:300;">Scan domains for phishing indicators, typosquatting, malicious activity and certificate anomalies.</p>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:300px 1fr;gap:1.5rem;align-items:start;">
+
+    <!-- LEFT -->
+    <div style="display:flex;flex-direction:column;gap:1.25rem;">
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1rem;opacity:.8;">// Scan Domain</div>
+        <form method="POST" action="{{ url_for('phishing_scan') }}">
+          <div style="margin-bottom:1rem;">
+            <label style="display:block;font-size:.72rem;font-weight:600;color:var(--text2);margin-bottom:.4rem;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.05em;">Domain or URL</label>
+            <input type="text" name="target" required value="{{ last_query or '' }}"
+              style="width:100%;background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:.6rem .75rem;color:var(--text1);font-size:.82rem;font-family:'JetBrains Mono',monospace;box-sizing:border-box;"
+              placeholder="e.g. paypal-secure.com">
+            <div style="font-size:.65rem;color:var(--text3);margin-top:.3rem;font-family:'JetBrains Mono',monospace;">URLs accepted — domain extracted automatically</div>
+          </div>
+          <div style="margin-bottom:1.25rem;">
+            <label style="display:block;font-size:.72rem;font-weight:600;color:var(--text2);margin-bottom:.4rem;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.05em;">Link to Case (optional)</label>
+            <input type="text" name="case_id"
+              style="width:100%;background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:.6rem .75rem;color:var(--text1);font-size:.82rem;font-family:'JetBrains Mono',monospace;box-sizing:border-box;"
+              placeholder="Case ID">
+          </div>
+          <button type="submit" style="width:100%;background:linear-gradient(135deg,#0f3460,#16213e);border:1px solid var(--cyan);border-radius:8px;padding:.7rem;color:var(--cyan);font-family:'JetBrains Mono',monospace;font-size:.78rem;font-weight:700;letter-spacing:.08em;cursor:pointer;transition:all .2s;" onmouseover="this.style.background='rgba(0,212,255,.1)'" onmouseout="this.style.background='linear-gradient(135deg,#0f3460,#16213e)'">
+            🎣 SCAN DOMAIN
+          </button>
+        </form>
+      </div>
+
+      <!-- Sources -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1rem;opacity:.8;">// Detection Sources</div>
+        {% for icon, name, desc in [
+          ('🦠','VirusTotal','94-engine multi-AV domain scan'),
+          ('🔍','URLScan.io','Browser-based domain verdict'),
+          ('🎣','PhishTank','Crowdsourced phishing DB'),
+          ('🐟','OpenPhish','Active phishing feed'),
+          ('🌐','URLhaus','Malware URL database'),
+          ('🔒','crt.sh','Certificate transparency logs'),
+          ('👥','Typosquatting','Brand impersonation detection'),
+        ] %}
+        <div style="display:flex;align-items:flex-start;gap:.6rem;padding:.5rem 0;border-bottom:1px solid rgba(255,255,255,.04);">
+          <span style="font-size:.85rem;margin-top:.1rem;">{{ icon }}</span>
+          <div>
+            <div style="font-size:.75rem;font-weight:600;color:var(--text1);">{{ name }}</div>
+            <div style="font-size:.67rem;color:var(--text3);font-family:'JetBrains Mono',monospace;">{{ desc }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div style="display:flex;flex-direction:column;gap:1.25rem;">
+
+      {% if result %}
+      {% set rc = {'critical':'#ef4444','high':'#f97316','medium':'#f59e0b','low':'#3b82f6','clean':'#10b981'}.get(result.overall_risk,'#6b7280') %}
+
+      <!-- Banner -->
+      <div style="background:var(--card);border:1px solid {{ rc }};border-radius:12px;padding:1.5rem;position:relative;overflow:hidden;">
+        <div style="position:absolute;top:0;left:0;right:0;height:3px;background:{{ rc }};"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.25rem;">
+          <div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.3rem;">Domain Scan Result</div>
+            <div style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;color:var(--text1);">{{ result.domain }}</div>
+            <div style="font-size:.72rem;color:var(--text3);margin-top:.25rem;font-family:'JetBrains Mono',monospace;">{{ result.sources_checked }} sources · {{ result.threats_found }} threat(s) detected</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;color:{{ rc }};text-transform:uppercase;">
+              {% if result.overall_risk == 'clean' %}✓ CLEAN{% else %}⚠ {{ result.overall_risk.upper() }}{% endif %}
+            </div>
+            <div style="font-size:1rem;font-weight:700;color:{{ rc }};font-family:'JetBrains Mono',monospace;">{{ result.risk_score }}/100</div>
+          </div>
+        </div>
+
+        <!-- Score bar -->
+        <div style="background:rgba(255,255,255,.06);border-radius:4px;height:6px;overflow:hidden;">
+          <div style="height:100%;background:{{ rc }};width:{{ result.risk_score }}%;transition:width .5s;"></div>
+        </div>
+      </div>
+
+      <!-- Source results grid -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1.25rem;opacity:.8;">// Source Breakdown</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
+          {% for src in result.results %}
+          {% set sc = '#ef4444' if src.get('found') else ('#6b7280' if src.get('error') else '#10b981') %}
+          <div style="padding:.875rem;background:var(--panel);border-radius:8px;border-left:3px solid {{ sc }};">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.35rem;">
+              <div style="font-size:.78rem;font-weight:700;color:var(--text1);">{{ src.source }}</div>
+              <span style="font-size:.65rem;font-weight:700;padding:.15rem .4rem;border-radius:3px;font-family:'JetBrains Mono',monospace;
+                {% if src.get('found') %}background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.2);
+                {% elif src.get('error') %}background:rgba(107,114,128,.1);color:#6b7280;border:1px solid rgba(107,114,128,.2);
+                {% else %}background:rgba(16,185,129,.1);color:#10b981;border:1px solid rgba(16,185,129,.2);{% endif %}">
+                {% if src.get('found') %}THREAT{% elif src.get('error') %}ERROR{% else %}CLEAN{% endif %}
+              </span>
+            </div>
+            <div style="font-size:.7rem;color:var(--text3);font-family:'JetBrains Mono',monospace;line-height:1.4;">{{ src.get('detail','')[:70] }}</div>
+            {% if src.get('matches') %}
+            <div style="margin-top:.4rem;">
+              {% for m in src.matches[:2] %}
+              <div style="font-size:.67rem;color:#f97316;font-family:'JetBrains Mono',monospace;">↳ {{ m.brand }} ({{ m.similarity }}%)</div>
+              {% endfor %}
+            </div>
+            {% endif %}
+            {% if src.get('suspicious_subdomains') %}
+            <div style="margin-top:.4rem;">
+              {% for s in src.suspicious_subdomains[:2] %}
+              <div style="font-size:.67rem;color:#f97316;font-family:'JetBrains Mono',monospace;">↳ {{ s }}</div>
+              {% endfor %}
+            </div>
+            {% endif %}
+            {% if src.get('score_contrib', 0) > 0 %}
+            <div style="font-size:.62rem;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:.3rem;opacity:.6;">+{{ src.score_contrib }} risk pts</div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- History -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1.25rem;opacity:.8;">// Recent Scans ({{ history|length }})</div>
+        {% if history %}
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;font-size:.78rem;">
+            <thead><tr style="border-bottom:1px solid var(--border);">
+              {% for h in ['Domain','Risk','Score','Threats','Scanned',''] %}
+              <th style="text-align:left;padding:.5rem .75rem;font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;font-weight:600;">{{ h }}</th>
+              {% endfor %}
+            </tr></thead>
+            <tbody>
+            {% for h in history %}
+            {% set hd = h.raw_results|fromjson if h.raw_results else {} %}
+            {% set sc = {'critical':'#ef4444','high':'#f97316','medium':'#f59e0b','low':'#3b82f6','clean':'#10b981'}.get(h.overall_risk,'#6b7280') %}
+            <tr style="border-bottom:1px solid rgba(255,255,255,.04);" onmouseover="this.style.background='rgba(255,255,255,.02)'" onmouseout="this.style.background='transparent'">
+              <td style="padding:.6rem .75rem;font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--text1);">{{ h.indicator_value[:30] }}{% if h.indicator_value|length > 30 %}…{% endif %}</td>
+              <td style="padding:.6rem .75rem;"><span style="font-size:.7rem;font-weight:700;color:{{ sc }};font-family:'JetBrains Mono',monospace;text-transform:uppercase;">{{ h.overall_risk }}</span></td>
+              <td style="padding:.6rem .75rem;color:var(--text3);font-family:'JetBrains Mono',monospace;">{{ hd.get('risk_score',0) }}/100</td>
+              <td style="padding:.6rem .75rem;color:var(--text3);font-family:'JetBrains Mono',monospace;">{{ hd.get('threats_found',0) }}/{{ hd.get('sources_checked',0) }}</td>
+              <td style="padding:.6rem .75rem;color:var(--text3);font-family:'JetBrains Mono',monospace;font-size:.72rem;">{{ h.scanned_at.strftime('%d %b %H:%M') }}</td>
+              <td style="padding:.6rem .75rem;"><a href="{{ url_for('phishing_detail', scan_id=h.id) }}" style="font-size:.7rem;font-family:'JetBrains Mono',monospace;color:var(--cyan);text-decoration:none;padding:.2rem .5rem;border:1px solid rgba(0,212,255,.2);border-radius:4px;" onmouseover="this.style.background='rgba(0,212,255,.1)'" onmouseout="this.style.background='transparent'">View →</a></td>
+            </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div style="text-align:center;padding:3rem;color:var(--text3);">
+          <div style="font-size:2rem;margin-bottom:.75rem;opacity:.3;">🎣</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:.78rem;">No domain scans yet. Enter a domain above.</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

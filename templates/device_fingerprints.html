@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Device Fingerprinting — DefenceIQ{% endblock %}
+{% block content %}
+<div style="max-width:1200px;margin:0 auto;padding:2rem;">
+
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem;">
+    <div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.15em;margin-bottom:.4rem;opacity:.7;">// Intelligence</div>
+      <h1 style="font-family:'Syne',sans-serif;font-size:1.75rem;font-weight:800;letter-spacing:-.02em;">Device Fingerprinting</h1>
+      <p style="font-size:.85rem;color:var(--text2);margin-top:.35rem;font-weight:300;">Browser fingerprint analysis — headless detection, VPN signals, timezone anomalies, anti-detect browsers.</p>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  {% if stats %}
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem;">
+    {% for label,value,color in [
+      ('Total Sessions', stats.total, '#06b6d4'),
+      ('Unique Devices', stats.unique_devices, '#3b82f6'),
+      ('High Risk', stats.high_risk, '#f97316'),
+      ('Critical', stats.critical_count, '#ef4444'),
+    ] %}
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1rem;text-align:center;">
+      <div style="font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:{{ color }};">{{ value }}</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-top:.2rem;">{{ label }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- How it works info box -->
+  <div style="background:var(--card);border:1px solid rgba(0,212,255,.2);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:1.5rem;display:flex;gap:1.25rem;align-items:flex-start;">
+    <div style="font-size:1.5rem;flex-shrink:0;">🔬</div>
+    <div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.4rem;">// How Device Fingerprinting Works</div>
+      <div style="font-size:.82rem;color:var(--text2);line-height:1.6;">
+        A lightweight JavaScript snippet runs silently in the user's browser and collects <strong style="color:var(--text1);">8 device signals</strong>: screen resolution, timezone, canvas hash, WebGL vendor, plugins, fonts, language, and webdriver flag. Each session is analysed for <strong style="color:var(--text1);">10 fraud signals</strong> including headless browsers, VPN ASNs, timezone mismatches, and anti-detect browser patterns. The fingerprint collector is automatically embedded in all DefenceIQ pages for logged-in users.
+      </div>
+    </div>
+  </div>
+
+  <!-- Fingerprint table -->
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;opacity:.8;">// Session Log ({{ fingerprints|length }})</div>
+      <div style="display:flex;gap:.5rem;">
+        {% for label,val in [('All',''),('Critical','critical'),('High','high'),('Clean','clean')] %}
+        <a href="?filter={{ val }}" style="font-size:.65rem;font-family:'JetBrains Mono',monospace;padding:.25rem .6rem;border-radius:4px;text-decoration:none;
+          {% if current_filter==val %}background:rgba(0,212,255,.15);color:var(--cyan);border:1px solid rgba(0,212,255,.3);
+          {% else %}background:transparent;color:var(--text3);border:1px solid var(--border);{% endif %}">{{ label }}</a>
+        {% endfor %}
+      </div>
+    </div>
+
+    {% if fingerprints %}
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:.78rem;">
+        <thead><tr style="border-bottom:1px solid var(--border);">
+          {% for h in ['Device Hash','Platform','Resolution','Timezone','Language','Flags','Risk','Seen',''] %}
+          <th style="text-align:left;padding:.5rem .75rem;font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;font-weight:600;white-space:nowrap;">{{ h }}</th>
+          {% endfor %}
+        </tr></thead>
+        <tbody>
+        {% for fp in fingerprints %}
+        {% set rc = {'critical':'#ef4444','high':'#f97316','medium':'#f59e0b','low':'#3b82f6','clean':'#10b981'}.get(fp.risk_level,'#6b7280') %}
+        <tr style="border-bottom:1px solid rgba(255,255,255,.04);" onmouseover="this.style.background='rgba(255,255,255,.02)'" onmouseout="this.style.background='transparent'">
+          <td style="padding:.6rem .75rem;font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--cyan);">{{ fp.fingerprint_hash }}</td>
+          <td style="padding:.6rem .75rem;color:var(--text2);font-size:.75rem;">{{ fp.platform or '—' }}</td>
+          <td style="padding:.6rem .75rem;color:var(--text3);font-family:'JetBrains Mono',monospace;font-size:.72rem;">{{ fp.screen_resolution or '—' }}</td>
+          <td style="padding:.6rem .75rem;color:var(--text3);font-size:.72rem;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ fp.timezone }}">{{ fp.timezone or '—' }}</td>
+          <td style="padding:.6rem .75rem;color:var(--text3);font-family:'JetBrains Mono',monospace;font-size:.72rem;">{{ fp.language or '—' }}</td>
+          <td style="padding:.6rem .75rem;">
+            {% set flag_list = fp.flags if fp.flags is iterable and fp.flags is not string else [] %}
+            {% if flag_list|length > 0 %}
+            <span style="font-size:.7rem;font-weight:700;padding:.2rem .45rem;border-radius:4px;background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.2);font-family:'JetBrains Mono',monospace;">{{ flag_list|length }} flag{% if flag_list|length != 1 %}s{% endif %}</span>
+            {% else %}
+            <span style="font-size:.7rem;color:var(--text3);font-family:'JetBrains Mono',monospace;">—</span>
+            {% endif %}
+          </td>
+          <td style="padding:.6rem .75rem;">
+            <span style="font-size:.72rem;font-weight:700;color:{{ rc }};font-family:'JetBrains Mono',monospace;text-transform:uppercase;">{{ fp.risk_level }}</span>
+            <div style="font-size:.62rem;color:{{ rc }};font-family:'JetBrains Mono',monospace;">{{ fp.risk_score }}/100</div>
+          </td>
+          <td style="padding:.6rem .75rem;color:var(--text3);font-family:'JetBrains Mono',monospace;font-size:.68rem;">{{ fp.created_at.strftime('%d %b %H:%M') }}</td>
+          <td style="padding:.6rem .75rem;">
+            <a href="/device-fingerprints/{{ fp.id }}" style="font-size:.7rem;font-family:'JetBrains Mono',monospace;color:var(--cyan);text-decoration:none;padding:.2rem .5rem;border:1px solid rgba(0,212,255,.2);border-radius:4px;" onmouseover="this.style.background='rgba(0,212,255,.1)'" onmouseout="this.style.background='transparent'">View →</a>
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:4rem;color:var(--text3);">
+      <div style="font-size:2.5rem;margin-bottom:.75rem;opacity:.3;">🔬</div>
+      <div style="font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;margin-bottom:.5rem;">No fingerprints yet</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.75rem;">Fingerprints are collected automatically when users log in and browse the platform.</div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

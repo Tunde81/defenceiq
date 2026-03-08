@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Webhooks{% endblock %}
+{% block page_title %}Webhook Integrations{% endblock %}
+{% block content %}
+<div style="display:grid;grid-template-columns:1fr 2fr;gap:1.25rem">
+    <div class="card">
+        <div class="card-header"><span class="card-title">Add Webhook</span></div>
+        <form method="POST">
+            <input type="hidden" name="action" value="add">
+            <div class="form-group">
+                <label class="form-label">Platform</label>
+                <select name="platform" class="form-control">
+                    <option value="slack">Slack</option>
+                    <option value="teams">Microsoft Teams</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Name</label>
+                <input type="text" name="name" class="form-control" placeholder="e.g. Fraud Alerts Channel">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Webhook URL</label>
+                <input type="url" name="webhook_url" class="form-control" placeholder="https://hooks.slack.com/..." required>
+            </div>
+            <div style="background:rgba(0,212,255,.06);border:1px solid rgba(0,212,255,.2);border-radius:8px;padding:.75rem;font-size:.78rem;color:var(--cyan);font-family:'JetBrains Mono',monospace;margin-bottom:1rem;line-height:1.7">
+                <strong>Slack:</strong> Apps → Incoming Webhooks → Add<br>
+                <strong>Teams:</strong> Channel → Connectors → Incoming Webhook
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">⊛ Add Webhook →</button>
+        </form>
+    </div>
+    <div class="card">
+        <div class="card-header"><span class="card-title">Active Webhooks ({{ webhooks|length }})</span></div>
+        {% if webhooks %}
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Name</th><th>Platform</th><th>Endpoint</th><th>Status</th><th>Actions</th></tr></thead>
+                <tbody>
+                {% for wh in webhooks %}
+                <tr>
+                    <td style="font-weight:600;font-size:.84rem;color:var(--text-primary)">{{ wh.name }}</td>
+                    <td><span style="font-size:.68rem;font-weight:700;padding:.15rem .45rem;border-radius:3px;font-family:'JetBrains Mono',monospace;background:{% if wh.platform == 'slack' %}rgba(245,158,11,.1){% else %}rgba(0,212,255,.08){% endif %};color:{% if wh.platform == 'slack' %}var(--amber){% else %}var(--cyan){% endif %};border:1px solid {% if wh.platform == 'slack' %}rgba(245,158,11,.25){% else %}rgba(0,212,255,.2){% endif %}">{{ wh.platform.upper() }}</span></td>
+                    <td style="font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--text-muted);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ wh.webhook_url[:45] }}…</td>
+                    <td><span class="badge {% if wh.is_active %}badge-resolved{% else %}badge-unknown{% endif %}">{{ '● ACTIVE' if wh.is_active else '○ OFF' }}</span></td>
+                    <td>
+                        <div style="display:flex;gap:.35rem">
+                            <form method="POST" style="display:inline">
+                                <input type="hidden" name="action" value="test">
+                                <input type="hidden" name="webhook_id" value="{{ wh.id }}">
+                                <button type="submit" class="btn btn-secondary btn-sm">Test</button>
+                            </form>
+                            <form method="POST" style="display:inline" onsubmit="return confirm('Remove webhook?')">
+                                <input type="hidden" name="action" value="delete">
+                                <input type="hidden" name="webhook_id" value="{{ wh.id }}">
+                                <button type="submit" class="btn btn-danger btn-sm">✕</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div style="text-align:center;padding:3rem;color:var(--text-muted)">
+            <div style="font-size:2rem;margin-bottom:.75rem;opacity:.3">⊛</div>
+            <div style="font-weight:600;color:var(--text-secondary);margin-bottom:.5rem;font-family:'JetBrains Mono',monospace">// NO WEBHOOKS CONFIGURED</div>
+            <div style="font-size:.84rem">Add a Slack or Teams webhook to receive real-time fraud alerts.</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

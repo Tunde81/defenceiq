@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Threat Intelligence{% endblock %}
+{% block page_title %}Threat Intelligence{% endblock %}
+{% block content %}
+<div style="display:grid;grid-template-columns:1fr 2fr;gap:1.25rem">
+    <div style="display:flex;flex-direction:column;gap:1.25rem">
+        <div class="card">
+            <div class="card-header"><span class="card-title">◎ Scan Indicator</span></div>
+            <form method="POST" action="{{ url_for('run_threat_scan') }}">
+                <div class="form-group">
+                    <label class="form-label">Indicator Type</label>
+                    <select name="indicator_type" class="form-control">
+                        <option value="ip">IP Address</option>
+                        <option value="email">Email Address</option>
+                        <option value="url">URL</option>
+                        <option value="domain">Domain</option>
+                        <option value="phone">Phone Number</option>
+                        <option value="bvn">BVN</option>
+                        <option value="account">Account Number</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Indicator Value</label>
+                    <input type="text" name="indicator_value" class="form-control" placeholder="e.g. 185.220.101.1" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Link to Case (optional)</label>
+                    <input type="text" name="case_id" class="form-control" placeholder="Case ID number">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">◎ Run Scan →</button>
+            </form>
+        </div>
+        <div class="card">
+            <div class="card-header"><span class="card-title">Intel Sources</span></div>
+            <div style="display:flex;flex-direction:column;gap:.6rem">
+                {% for icon, label, types, active in [('🔴','AbuseIPDB','IP addresses',true),('🌐','VirusTotal','URLs & domains',true),('📧','EmailRep','Email reputation',true),('💧','HaveIBeenPwned','Email breaches',true),('🐟','OpenPhish','Phishing URLs',true)] %}
+                <div style="display:flex;align-items:center;gap:.75rem;padding:.5rem 0;border-bottom:1px solid rgba(30,51,84,.4)">
+                    <span style="font-size:1rem">{{ icon }}</span>
+                    <div style="flex:1">
+                        <div style="font-size:.82rem;font-weight:600;color:var(--text-primary)">{{ label }}</div>
+                        <div style="font-size:.7rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace">{{ types }}</div>
+                    </div>
+                    <span class="badge badge-resolved" style="font-size:.6rem">ACTIVE</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">Scan History ({{ scans|length }})</span>
+        </div>
+        {% if scans %}
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Indicator</th><th>Type</th><th>Overall Risk</th><th>Sources</th><th>Scanned</th><th></th></tr></thead>
+                <tbody>
+                {% for scan in scans %}
+                <tr>
+                    <td style="font-family:'JetBrains Mono',monospace;font-weight:600;font-size:.78rem;color:var(--text-primary)">{{ scan.indicator_value[:28] }}{% if scan.indicator_value|length > 28 %}…{% endif %}</td>
+                    <td><span style="font-size:.68rem;font-weight:700;background:rgba(0,212,255,.08);color:var(--cyan);padding:.15rem .45rem;border-radius:3px;font-family:'JetBrains Mono',monospace;border:1px solid rgba(0,212,255,.2)">{{ scan.indicator_type }}</span></td>
+                    <td><span class="badge badge-{{ scan.overall_risk if scan.overall_risk in ['critical','high','medium','low','clean'] else 'unknown' }}">{{ scan.overall_risk or 'unknown' }}</span></td>
+                    <td style="font-size:.78rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace">{{ scan.sources_checked }} checked</td>
+                    <td style="font-size:.72rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace">{{ scan.scanned_at.strftime('%d %b %Y %H:%M') }}</td>
+                    <td><a href="{{ url_for('scan_detail', scan_id=scan.id) }}" class="btn btn-secondary btn-sm">Details</a></td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div style="text-align:center;padding:4rem;color:var(--text-muted)">
+            <div style="font-size:2.5rem;margin-bottom:1rem;opacity:.3">◎</div>
+            <div style="font-weight:600;color:var(--text-secondary);margin-bottom:.5rem;font-family:'JetBrains Mono',monospace">// NO SCANS YET</div>
+            <div style="font-size:.84rem">Submit an indicator to check against threat intelligence feeds.</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

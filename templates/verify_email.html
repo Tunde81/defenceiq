@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Verify Email{% endblock %}
+{% block public_content %}
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg-base);padding:2rem">
+    <div style="width:100%;max-width:420px;text-align:center">
+        <div style="display:inline-flex;align-items:center;gap:.75rem;margin-bottom:2rem">
+            <div style="width:42px;height:42px;background:linear-gradient(135deg,var(--cyan-dim),#004477);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;box-shadow:0 0 20px var(--cyan-glow)">🛡️</div>
+            <div style="font-size:1.5rem;font-weight:700;color:var(--white)">Defence<span style="color:var(--cyan)">IQ</span></div>
+        </div>
+        <div class="card">
+            <div style="font-size:2.5rem;margin-bottom:1rem">📧</div>
+            <div style="font-size:.68rem;font-weight:600;color:var(--cyan);text-transform:uppercase;letter-spacing:.12em;font-family:'JetBrains Mono',monospace;margin-bottom:.5rem">// Verify Identity</div>
+            <div style="font-size:.875rem;color:var(--text-secondary);margin-bottom:1.5rem;line-height:1.6">Enter the 6-digit OTP sent to your email address to activate your account.</div>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ 'error' if category == 'error' else category }}">{{ message }}</div>
+                {% endfor %}
+            {% endwith %}
+            <form method="POST">
+                <div class="form-group">
+                    <label class="form-label">Verification Code</label>
+                    <input type="text" name="otp" class="form-control" placeholder="000000" maxlength="6" style="text-align:center;font-size:1.5rem;font-family:'JetBrains Mono',monospace;letter-spacing:.25em" required autofocus>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">→ Verify & Activate</button>
+            </form>
+            <div class="glow-divider"></div>
+            <a href="{{ url_for('login') }}" style="font-size:.82rem;color:var(--text-muted);text-decoration:none">← Back to login</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Team{% endblock %}
+{% block page_title %}Team Management{% endblock %}
+{% block content %}
+<div style="display:grid;grid-template-columns:1fr 2fr;gap:1.25rem">
+    <div class="card">
+        <div class="card-header"><span class="card-title">Invite Member</span></div>
+        <form method="POST" action="{{ url_for('invite_member') }}">
+            <div class="form-group">
+                <label class="form-label">Full Name</label>
+                <input type="text" name="full_name" class="form-control" placeholder="Analyst name" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" name="email" class="form-control" placeholder="analyst@org.com" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Role</label>
+                <select name="role" class="form-control">
+                    <option value="analyst">Analyst</option>
+                    <option value="viewer">Viewer</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+            <div style="background:rgba(0,212,255,.06);border:1px solid rgba(0,212,255,.2);border-radius:8px;padding:.75rem;font-size:.78rem;color:var(--cyan);font-family:'JetBrains Mono',monospace;margin-bottom:1rem;line-height:1.6">
+                ⊞ An invitation email with a temporary password will be sent to the new member.
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">⊞ Send Invitation →</button>
+        </form>
+    </div>
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">Team Members ({{ members|length }})</span>
+            <span style="font-size:.72rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace">{{ org.plan }} plan</span>
+        </div>
+        {% if members %}
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Member</th><th>Email</th><th>Role</th><th>Status</th><th>Joined</th></tr></thead>
+                <tbody>
+                {% for member in members %}
+                <tr>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:.6rem">
+                            <div style="width:28px;height:28px;background:linear-gradient(135deg,var(--cyan-dim),#004477);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;color:var(--white);flex-shrink:0">{{ member.full_name[0].upper() if member.full_name else '?' }}</div>
+                            <span style="font-weight:600;font-size:.84rem;color:var(--text-primary)">{{ member.full_name or '—' }}</span>
+                        </div>
+                    </td>
+                    <td style="font-size:.78rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace">{{ member.email }}</td>
+                    <td><span style="font-size:.68rem;font-weight:700;padding:.15rem .45rem;border-radius:3px;font-family:'JetBrains Mono',monospace;background:{% if member.role == 'admin' %}rgba(168,85,247,.1){% else %}rgba(0,212,255,.08){% endif %};color:{% if member.role == 'admin' %}#c084fc{% else %}var(--cyan){% endif %};border:1px solid {% if member.role == 'admin' %}rgba(168,85,247,.25){% else %}rgba(0,212,255,.2){% endif %}">{{ member.role.upper() }}</span></td>
+                    <td><span class="badge {% if member.is_verified %}badge-resolved{% else %}badge-open{% endif %}">{{ 'ACTIVE' if member.is_verified else 'PENDING' }}</span></td>
+                    <td style="font-size:.75rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace">{{ member.created_at.strftime('%d %b %Y') }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div style="text-align:center;padding:3rem;color:var(--text-muted)">
+            <div style="font-size:2rem;margin-bottom:.75rem;opacity:.3">⊞</div>
+            <div style="font-weight:600;color:var(--text-secondary);font-family:'JetBrains Mono',monospace">// NO TEAM MEMBERS</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

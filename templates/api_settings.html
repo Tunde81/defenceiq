@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}API Keys{% endblock %}
+{% block page_title %}API Access{% endblock %}
+{% block content %}
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem">
+    <div class="card">
+        <div class="card-header"><span class="card-title">Your API Key</span></div>
+        {% if org.api_key %}
+        <div style="background:var(--bg-input);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-bottom:1rem;font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--cyan);word-break:break-all;letter-spacing:.02em">{{ org.api_key }}</div>
+        <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:1rem;font-family:'JetBrains Mono',monospace">Include as header: <span style="color:var(--cyan)">X-API-Key: &lt;key&gt;</span></div>
+        {% else %}
+        <div style="text-align:center;padding:1.5rem;color:var(--text-muted);margin-bottom:1rem">
+            <div style="font-size:.84rem">No API key generated yet.</div>
+        </div>
+        {% endif %}
+        {% if org.plan in ['professional', 'enterprise'] %}
+        <form method="POST" action="{{ url_for('regenerate_api_key') }}">
+            <button type="submit" class="btn btn-primary btn-sm" onclick="return confirm('Regenerate API key? Old key will stop working.')">⌥ {{ 'Regenerate' if org.api_key else 'Generate' }} API Key</button>
+        </form>
+        {% else %}
+        <a href="{{ url_for('billing') }}" class="btn btn-secondary btn-sm">↑ Upgrade for API Access</a>
+        {% endif %}
+    </div>
+    <div class="card">
+        <div class="card-header"><span class="card-title">API Reference</span></div>
+        <div style="display:flex;flex-direction:column;gap:.875rem">
+            {% for method, path, desc in [('GET','/api/v1/cases','List fraud cases'),('POST','/api/v1/cases','Submit new case'),('GET','/api/v1/cases/{id}','Get case details')] %}
+            <div style="background:var(--bg-input);border:1px solid var(--border);border-radius:8px;padding:.75rem">
+                <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.35rem">
+                    <span style="font-size:.65rem;font-weight:700;padding:.15rem .45rem;border-radius:3px;font-family:'JetBrains Mono',monospace;background:{% if method == 'GET' %}rgba(0,255,136,.1){% else %}rgba(0,212,255,.1){% endif %};color:{% if method == 'GET' %}var(--green){% else %}var(--cyan){% endif %};border:1px solid {% if method == 'GET' %}rgba(0,255,136,.25){% else %}rgba(0,212,255,.25){% endif %}">{{ method }}</span>
+                    <code style="font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--text-primary)">{{ path }}</code>
+                </div>
+                <div style="font-size:.78rem;color:var(--text-muted)">{{ desc }}</div>
+            </div>
+            {% endfor %}
+            <div style="background:var(--bg-input);border:1px solid var(--border);border-radius:8px;padding:.75rem">
+                <div style="font-size:.65rem;font-weight:600;color:var(--text-muted);font-family:'JetBrains Mono',monospace;margin-bottom:.5rem">EXAMPLE REQUEST</div>
+                <pre style="font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--cyan);line-height:1.6;overflow-x:auto">curl -X POST https://defenceiq.io/api/v1/cases \
+  -H "X-API-Key: YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"indicator_type":"bvn","indicator_value":"12345678901","fraud_type":"Loan Fraud","severity":"high"}'</pre>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}Dark Web Monitor — DefenceIQ{% endblock %}
+{% block content %}
+<div style="max-width:1100px;margin:0 auto;padding:2rem;">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem;">
+    <div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.15em;margin-bottom:.4rem;opacity:.7;">// Intelligence</div>
+      <h1 style="font-family:'Syne',sans-serif;font-size:1.75rem;font-weight:800;letter-spacing:-.02em;">Dark Web Monitor</h1>
+      <p style="font-size:.85rem;color:var(--text2);margin-top:.35rem;font-weight:300;">Check indicators against breach databases, paste sites, and dark web threat feeds.</p>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:320px 1fr;gap:1.5rem;align-items:start;">
+    <!-- LEFT -->
+    <div style="display:flex;flex-direction:column;gap:1.25rem;">
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1rem;opacity:.8;">// New Scan</div>
+        <form method="POST" action="{{ url_for('dark_web_scan_run') }}">
+          <div style="margin-bottom:1rem;">
+            <label style="display:block;font-size:.72rem;font-weight:600;color:var(--text2);margin-bottom:.4rem;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.05em;">Indicator Type</label>
+            <select name="indicator_type" style="width:100%;background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:.6rem .75rem;color:var(--text1);font-size:.82rem;font-family:'JetBrains Mono',monospace;">
+              <option value="email">📧 Email Address</option>
+              <option value="ip">🌐 IP Address</option>
+              <option value="url">🔗 URL</option>
+              <option value="domain">🏠 Domain</option>
+              <option value="password">🔑 Password</option>
+            </select>
+          </div>
+          <div style="margin-bottom:1rem;">
+            <label style="display:block;font-size:.72rem;font-weight:600;color:var(--text2);margin-bottom:.4rem;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.05em;">Indicator Value</label>
+            <input type="text" name="indicator_value" required style="width:100%;background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:.6rem .75rem;color:var(--text1);font-size:.82rem;font-family:'JetBrains Mono',monospace;box-sizing:border-box;" placeholder="e.g. suspect@domain.com">
+          </div>
+          <div style="margin-bottom:1.25rem;">
+            <label style="display:block;font-size:.72rem;font-weight:600;color:var(--text2);margin-bottom:.4rem;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.05em;">Link to Case (optional)</label>
+            <input type="text" name="case_id" style="width:100%;background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:.6rem .75rem;color:var(--text1);font-size:.82rem;font-family:'JetBrains Mono',monospace;box-sizing:border-box;" placeholder="Case ID">
+          </div>
+          <button type="submit" style="width:100%;background:linear-gradient(135deg,#0f3460,#16213e);border:1px solid var(--cyan);border-radius:8px;padding:.7rem;color:var(--cyan);font-family:'JetBrains Mono',monospace;font-size:.78rem;font-weight:700;letter-spacing:.08em;cursor:pointer;transition:all .2s;" onmouseover="this.style.background='rgba(0,212,255,.1)'" onmouseout="this.style.background='linear-gradient(135deg,#0f3460,#16213e)'">
+            ⬡ RUN DARK WEB SCAN
+          </button>
+        </form>
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1rem;opacity:.8;">// Active Sources</div>
+        {% for icon,name,types in [('💧','HIBP Pwned Passwords','Passwords'),('🔍','LeakCheck','Email breaches'),('📧','EmailRep','Email reputation'),('🔴','AbuseIPDB','IP abuse'),('🧅','Tor Exit Nodes','IP anonymity'),('🦠','URLhaus','Malware URLs'),('🎣','PhishTank','Phishing URLs'),('🌐','VirusTotal','URLs & domains'),('🐟','OpenPhish','Phishing feed')] %}
+        <div style="display:flex;align-items:center;gap:.75rem;padding:.45rem 0;border-bottom:1px solid rgba(255,255,255,.04);">
+          <span style="font-size:.9rem;width:20px;text-align:center;">{{ icon }}</span>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:.78rem;font-weight:600;color:var(--text1);">{{ name }}</div>
+            <div style="font-size:.65rem;color:var(--text3);font-family:'JetBrains Mono',monospace;">{{ types }}</div>
+          </div>
+          <span style="font-size:.58rem;font-weight:700;padding:.15rem .4rem;border-radius:3px;background:rgba(16,185,129,.1);color:#10b981;border:1px solid rgba(16,185,129,.2);font-family:'JetBrains Mono',monospace;">FREE</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    <!-- RIGHT -->
+    <div style="display:flex;flex-direction:column;gap:1.25rem;">
+      {% if latest_scan %}
+      {% set scan = latest_scan %}
+      {% set rd = scan.raw_results|fromjson if scan.raw_results else {} %}
+      {% set rc = {'critical':'#ef4444','high':'#f97316','medium':'#f59e0b','low':'#3b82f6','clean':'#10b981'}.get(scan.overall_risk,'#6b7280') %}
+      <div style="background:var(--card);border:1px solid {{ rc }};border-radius:12px;padding:1.5rem;position:relative;overflow:hidden;">
+        <div style="position:absolute;top:0;left:0;right:0;height:3px;background:{{ rc }};"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+          <div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.3rem;">Latest Scan Result</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:1rem;font-weight:700;color:var(--text1);">{{ scan.indicator_value }}</div>
+            <div style="font-size:.75rem;color:var(--text3);margin-top:.2rem;">{{ scan.indicator_type }} · {{ scan.scanned_at.strftime('%d %b %Y %H:%M') }} UTC</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;color:{{ rc }};text-transform:uppercase;">{{ scan.overall_risk }}</div>
+            <div style="font-size:.7rem;color:var(--text3);font-family:'JetBrains Mono',monospace;">{{ scan.sources_checked }} sources</div>
+          </div>
+        </div>
+        {% if rd.get('threat_summary') %}
+        <div style="margin-top:1rem;padding:.75rem;background:rgba(0,0,0,.2);border-radius:7px;font-size:.78rem;color:var(--text2);font-family:'JetBrains Mono',monospace;line-height:1.6;">{{ rd.threat_summary }}</div>
+        {% endif %}
+      </div>
+      {% if rd.get('results') %}
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1.25rem;opacity:.8;">// Source Breakdown</div>
+        <div style="display:flex;flex-direction:column;gap:.75rem;">
+          {% for res in rd.results %}
+          {% set rl = res.get('risk_level','clean') %}
+          {% set rcc = {'critical':'#ef4444','high':'#f97316','medium':'#f59e0b','low':'#3b82f6','clean':'#10b981','unknown':'#6b7280'}.get(rl,'#6b7280') %}
+          <div style="display:flex;align-items:flex-start;gap:1rem;padding:.875rem;background:var(--panel);border-radius:8px;border-left:3px solid {{ rcc }};">
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.3rem;">
+                <span style="font-size:.8rem;font-weight:700;color:var(--text1);">{{ res.source }}</span>
+                {% if res.get('found') %}
+                <span style="font-size:.6rem;font-weight:700;padding:.1rem .35rem;border-radius:3px;background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3);font-family:'JetBrains Mono',monospace;">FOUND</span>
+                {% else %}
+                <span style="font-size:.6rem;font-weight:700;padding:.1rem .35rem;border-radius:3px;background:rgba(16,185,129,.1);color:#10b981;border:1px solid rgba(16,185,129,.2);font-family:'JetBrains Mono',monospace;">CLEAN</span>
+                {% endif %}
+              </div>
+              <div style="font-size:.75rem;color:var(--text3);font-family:'JetBrains Mono',monospace;">
+                {% if res.get('detail') %}{{ res.detail }}{% elif res.get('reason') %}{{ res.reason }}{% elif res.get('error') %}Error: {{ res.error }}{% else %}No detail{% endif %}
+              </div>
+            </div>
+            <div style="font-size:.7rem;font-weight:700;font-family:'JetBrains Mono',monospace;color:{{ rcc }};text-transform:uppercase;white-space:nowrap;">{{ rl }}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+      {% endif %}
+      <!-- History -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1.25rem;opacity:.8;">// Scan History ({{ scans|length }})</div>
+        {% if scans %}
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;font-size:.78rem;">
+            <thead><tr style="border-bottom:1px solid var(--border);">
+              {% for h in ['Indicator','Type','Risk','Sources','Scanned',''] %}
+              <th style="text-align:left;padding:.5rem .75rem;font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;font-weight:600;">{{ h }}</th>
+              {% endfor %}
+            </tr></thead>
+            <tbody>
+            {% for s in scans %}
+            {% set sc = {'critical':'#ef4444','high':'#f97316','medium':'#f59e0b','low':'#3b82f6','clean':'#10b981','unknown':'#6b7280'}.get(s.overall_risk,'#6b7280') %}
+            <tr style="border-bottom:1px solid rgba(255,255,255,.04);" onmouseover="this.style.background='rgba(255,255,255,.02)'" onmouseout="this.style.background='transparent'">
+              <td style="padding:.6rem .75rem;font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--text1);">{{ s.indicator_value[:28] }}{% if s.indicator_value|length > 28 %}…{% endif %}</td>
+              <td style="padding:.6rem .75rem;"><span style="font-size:.65rem;font-weight:700;background:rgba(0,212,255,.08);color:var(--cyan);padding:.15rem .4rem;border-radius:3px;font-family:'JetBrains Mono',monospace;border:1px solid rgba(0,212,255,.2);">{{ s.indicator_type }}</span></td>
+              <td style="padding:.6rem .75rem;"><span style="font-size:.7rem;font-weight:700;color:{{ sc }};font-family:'JetBrains Mono',monospace;text-transform:uppercase;">{{ s.overall_risk }}</span></td>
+              <td style="padding:.6rem .75rem;color:var(--text3);font-family:'JetBrains Mono',monospace;">{{ s.sources_checked }}</td>
+              <td style="padding:.6rem .75rem;color:var(--text3);font-family:'JetBrains Mono',monospace;font-size:.72rem;">{{ s.scanned_at.strftime('%d %b %H:%M') }}</td>
+              <td style="padding:.6rem .75rem;"><a href="{{ url_for('dark_web_scan_detail', scan_id=s.id) }}" style="font-size:.7rem;font-family:'JetBrains Mono',monospace;color:var(--cyan);text-decoration:none;padding:.2rem .5rem;border:1px solid rgba(0,212,255,.2);border-radius:4px;" onmouseover="this.style.background='rgba(0,212,255,.1)'" onmouseout="this.style.background='transparent'">View →</a></td>
+            </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div style="text-align:center;padding:3rem;color:var(--text3);">
+          <div style="font-size:2rem;margin-bottom:.75rem;opacity:.3;">⬡</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:.78rem;">No dark web scans yet. Submit an indicator above.</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

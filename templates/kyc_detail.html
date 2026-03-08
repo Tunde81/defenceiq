@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}KYC — {{ profile.full_name }} — DefenceIQ{% endblock %}
+{% block content %}
+<div style="max-width:1000px;margin:0 auto;padding:2rem;">
+  <div style="margin-bottom:1.5rem;">
+    <a href="{{ url_for('kyc') }}" style="font-size:.72rem;color:var(--text3);text-decoration:none;font-family:'JetBrains Mono',monospace;">← Back to KYC</a>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-top:.5rem;">
+      <div>
+        <h1 style="font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;letter-spacing:-.02em;">{{ profile.full_name }}</h1>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--text3);margin-top:.25rem;">{{ profile.profile_ref }} · {{ profile.customer_type.title() }} · Created {{ profile.created_at.strftime('%d %b %Y') }}</div>
+      </div>
+      <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
+        {% if profile.kyc_status == 'pending' or profile.kyc_status == 'in_review' %}
+        <form method="POST" action="{{ url_for('kyc_approve', profile_id=profile.id) }}" style="display:inline;">
+          <button type="submit" style="padding:.6rem 1.1rem;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:7px;color:#10b981;font-family:'JetBrains Mono',monospace;font-size:.75rem;font-weight:700;cursor:pointer;">✓ Approve</button>
+        </form>
+        <form method="POST" action="{{ url_for('kyc_reject', profile_id=profile.id) }}" style="display:inline;">
+          <button type="submit" style="padding:.6rem 1.1rem;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:7px;color:#ef4444;font-family:'JetBrains Mono',monospace;font-size:.75rem;font-weight:700;cursor:pointer;">✕ Reject</button>
+        </form>
+        {% endif %}
+        {% if profile.kyc_status == 'approved' %}
+        <span style="padding:.6rem 1.1rem;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:7px;color:#10b981;font-family:'JetBrains Mono',monospace;font-size:.75rem;font-weight:700;">✓ APPROVED</span>
+        {% elif profile.kyc_status == 'rejected' %}
+        <span style="padding:.6rem 1.1rem;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:7px;color:#ef4444;font-family:'JetBrains Mono',monospace;font-size:.75rem;font-weight:700;">✕ REJECTED</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {% set rc = {'high':'#ef4444','medium':'#f59e0b','low':'#10b981'}.get(profile.risk_rating,'#6b7280') %}
+
+  <!-- Risk banner -->
+  <div style="background:var(--card);border:1px solid {{ rc }};border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:1.5rem;position:relative;overflow:hidden;">
+    <div style="position:absolute;top:0;left:0;right:0;height:3px;background:{{ rc }};"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+      <div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;">
+        <div>
+          <div style="font-size:.65rem;color:var(--text3);font-family:'JetBrains Mono',monospace;text-transform:uppercase;margin-bottom:.2rem;">Risk Rating</div>
+          <div style="font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:800;color:{{ rc }};text-transform:uppercase;">{{ profile.risk_rating }}</div>
+          <div style="font-size:.7rem;color:{{ rc }};font-family:'JetBrains Mono',monospace;">{{ profile.risk_score }}/100</div>
+        </div>
+        <div style="width:1px;height:40px;background:var(--border);"></div>
+        <div>
+          <div style="font-size:.65rem;color:var(--text3);font-family:'JetBrains Mono',monospace;text-transform:uppercase;margin-bottom:.2rem;">Due Diligence</div>
+          <div style="font-size:.85rem;font-weight:700;color:{% if profile.due_diligence=='enhanced' %}#8b5cf6{% else %}#3b82f6{% endif %};">{{ profile.due_diligence.upper() }} DD</div>
+        </div>
+        <div style="width:1px;height:40px;background:var(--border);"></div>
+        <div>
+          <div style="font-size:.65rem;color:var(--text3);font-family:'JetBrains Mono',monospace;text-transform:uppercase;margin-bottom:.2rem;">Completion</div>
+          <div style="font-size:.85rem;font-weight:700;color:var(--text1);">{{ completion_pct }}%</div>
+        </div>
+        {% if profile.pep_status or profile.sanctions_hit %}
+        <div style="width:1px;height:40px;background:var(--border);"></div>
+        <div style="display:flex;gap:.5rem;">
+          {% if profile.pep_status %}<span style="font-size:.72rem;font-weight:700;padding:.3rem .6rem;border-radius:5px;background:rgba(249,115,22,.1);color:#f97316;border:1px solid rgba(249,115,22,.25);">PEP</span>{% endif %}
+          {% if profile.sanctions_hit %}<span style="font-size:.72rem;font-weight:700;padding:.3rem .6rem;border-radius:5px;background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.25);">SANCTIONS HIT</span>{% endif %}
+        </div>
+        {% endif %}
+      </div>
+      {% if profile.review_due %}
+      <div style="text-align:right;">
+        <div style="font-size:.65rem;color:var(--text3);font-family:'JetBrains Mono',monospace;text-transform:uppercase;margin-bottom:.2rem;">Review Due</div>
+        <div style="font-size:.8rem;font-weight:600;color:var(--text1);">{{ profile.review_due.strftime('%d %b %Y') }}</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem;">
+    <!-- Profile info -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1rem;opacity:.8;">// Profile</div>
+      {% for label,value in [
+        ('Full Name', profile.full_name),
+        ('Date of Birth', profile.date_of_birth.strftime('%d %B %Y') if profile.date_of_birth else '—'),
+        ('Nationality', profile.nationality or '—'),
+        ('Country of Residence', profile.country_of_residence or '—'),
+        ('ID Number', profile.id_number or '—'),
+        ('Email', profile.email or '—'),
+        ('Phone', profile.phone or '—'),
+      ] %}
+      <div style="display:flex;justify-content:space-between;padding:.45rem 0;border-bottom:1px solid rgba(255,255,255,.04);">
+        <span style="font-size:.72rem;color:var(--text3);font-family:'JetBrains Mono',monospace;">{{ label }}</span>
+        <span style="font-size:.78rem;color:var(--text1);font-weight:600;text-align:right;max-width:200px;overflow:hidden;text-overflow:ellipsis;">{{ value }}</span>
+      </div>
+      {% endfor %}
+      {% if profile.notes %}
+      <div style="margin-top:.75rem;padding:.75rem;background:rgba(255,255,255,.03);border-radius:6px;font-size:.75rem;color:var(--text3);line-height:1.5;">{{ profile.notes }}</div>
+      {% endif %}
+    </div>
+
+    <!-- Document checklist -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1rem;opacity:.8;">// Document Checklist</div>
+      <div style="display:flex;flex-direction:column;gap:.5rem;">
+        {% for doc in documents %}
+        {% set dc = {'verified':'#10b981','uploaded':'#3b82f6','required':'#ef4444','waived':'#6b7280'}.get(doc.status,'#6b7280') %}
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:.6rem .75rem;background:var(--panel);border-radius:7px;border-left:3px solid {{ dc }};">
+          <div>
+            <div style="font-size:.75rem;font-weight:600;color:var(--text1);">{{ doc.doc_label }}</div>
+            {% if doc.notes %}<div style="font-size:.65rem;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:.1rem;">{{ doc.notes }}</div>{% endif %}
+          </div>
+          <div style="display:flex;align-items:center;gap:.5rem;">
+            <span style="font-size:.65rem;font-weight:700;padding:.15rem .4rem;border-radius:3px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;color:{{ dc }};border:1px solid {{ dc }}33;background:{{ dc }}11;">{{ doc.status }}</span>
+            {% if doc.status == 'required' %}
+            <form method="POST" action="{{ url_for('kyc_doc_update', profile_id=profile.id, doc_id=doc.id) }}" style="display:inline;">
+              <input type="hidden" name="status" value="uploaded">
+              <button type="submit" style="font-size:.62rem;padding:.2rem .45rem;border-radius:4px;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);color:#3b82f6;font-family:'JetBrains Mono',monospace;cursor:pointer;">Mark Uploaded</button>
+            </form>
+            {% elif doc.status == 'uploaded' %}
+            <form method="POST" action="{{ url_for('kyc_doc_update', profile_id=profile.id, doc_id=doc.id) }}" style="display:inline;">
+              <input type="hidden" name="status" value="verified">
+              <button type="submit" style="font-size:.62rem;padding:.2rem .45rem;border-radius:4px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:#10b981;font-family:'JetBrains Mono',monospace;cursor:pointer;">Verify ✓</button>
+            </form>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

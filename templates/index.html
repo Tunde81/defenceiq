@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DefenceIQ — AI Fraud Intelligence Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600&family=Inter:wght@300;400;500family=JetBrains+Mono:wght@300;400;500;600family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600&family=Inter:wght@300;400;500family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--black:#020912;--navy:#050e1f;--panel:#081527;--card:#0c1e35;--border:#122440;--border-glow:#1a3a6a;--cyan:#00d4ff;--cyan2:#00a8cc;--green:#00ff88;--red:#ff3b5c;--amber:#f59e0b;--white:#ffffff;--text1:#ddeeff;--text2:#6a9bbf;--text3:#2d4f72}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:var(--black);color:var(--text1);overflow-x:hidden;line-height:1.6}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,0.025) 1px,transparent 1px);background-size:60px 60px;pointer-events:none;z-index:0}
+.orb{position:fixed;border-radius:50%;filter:blur(80px);pointer-events:none;z-index:0}
+.orb1{width:700px;height:700px;background:rgba(0,150,255,0.055);top:-150px;right:-150px}
+.orb2{width:500px;height:500px;background:rgba(0,212,255,0.035);bottom:5%;left:-150px}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 2rem;height:64px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:rgba(2,9,18,0.88);backdrop-filter:blur(20px)}
+.nav-logo{display:flex;align-items:center;gap:.6rem;text-decoration:none}
+.nav-logo-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--cyan2),#004488);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:.85rem;box-shadow:0 0 16px rgba(0,212,255,0.25)}
+.logo-text{font-family:'Plus Jakarta Sans',sans-serif;font-size:1.1rem;font-weight:700;color:var(--white)}
+.logo-text span{color:var(--cyan)}
+.nav-links{display:flex;align-items:center;gap:2rem}
+.nav-links a{font-size:.78rem;color:var(--text2);text-decoration:none;font-family:'JetBrains Mono',monospace;transition:color .2s}
+.nav-links a:hover{color:var(--cyan)}
+.nav-cta{display:flex;align-items:center;gap:.75rem}
+.btn-ghost{padding:.42rem 1rem;border:1px solid var(--border-glow);border-radius:6px;font-size:.78rem;color:var(--text2);background:transparent;text-decoration:none;font-family:'JetBrains Mono',monospace;transition:all .2s}
+.btn-ghost:hover{border-color:var(--cyan);color:var(--cyan)}
+.btn-nav{padding:.42rem 1.25rem;border-radius:6px;font-size:.82rem;font-weight:700;color:var(--white);background:linear-gradient(135deg,var(--cyan2),#004488);text-decoration:none;font-family:'Plus Jakarta Sans',sans-serif;box-shadow:0 0 16px rgba(0,153,204,.3);transition:all .2s}
+.btn-nav:hover{box-shadow:0 0 24px rgba(0,212,255,.45);transform:translateY(-1px)}
+.ticker-wrap{background:var(--panel);border-bottom:1px solid var(--border);overflow:hidden;margin-top:64px;position:relative;z-index:1}
+.ticker-track{display:flex;animation:marquee 30s linear infinite;width:max-content}
+.ticker-track:hover{animation-play-state:paused}
+@keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.t-item{display:flex;align-items:center;gap:.55rem;padding:.65rem 1.25rem;border-right:1px solid var(--border);white-space:nowrap;font-family:'JetBrains Mono',monospace;font-size:.7rem;flex-shrink:0}
+.t-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.t-dot.r{background:var(--red);box-shadow:0 0 5px var(--red)}
+.t-dot.a{background:var(--amber);box-shadow:0 0 5px var(--amber)}
+.t-dot.g{background:var(--green);box-shadow:0 0 5px var(--green)}
+.hero{position:relative;z-index:1;min-height:92vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:5rem 2rem 4rem}
+.hero-badge{display:inline-flex;align-items:center;gap:.5rem;padding:.32rem .875rem;border:1px solid rgba(0,212,255,.22);border-radius:100px;font-family:'JetBrains Mono',monospace;font-size:.67rem;color:var(--cyan);background:rgba(0,212,255,.05);margin-bottom:2rem;animation:fadeUp .8s ease both;letter-spacing:.04em}
+.pulse-dot{width:6px;height:6px;background:var(--green);border-radius:50%;box-shadow:0 0 8px var(--green);animation:pulse 2s infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+h1{font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(2.8rem,7vw,5.75rem);font-weight:800;line-height:1.02;letter-spacing:-.035em;margin-bottom:1.5rem;animation:fadeUp .8s .1s ease both}
+.l1,.l3{display:block;color:var(--white)}
+.l2{display:block;background:linear-gradient(135deg,var(--cyan),#00aaff,var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 30px rgba(0,212,255,.3))}
+.hero-sub{font-size:1.05rem;color:var(--text2);max-width:540px;margin:0 auto 2.5rem;line-height:1.8;animation:fadeUp .8s .2s ease both;font-weight:300}
+.hero-actions{display:flex;align-items:center;justify-content:center;gap:1rem;flex-wrap:wrap;animation:fadeUp .8s .3s ease both}
+.btn-primary{padding:.9rem 2.1rem;border-radius:8px;font-size:.9rem;font-weight:700;color:var(--white);background:linear-gradient(135deg,var(--cyan2),#004d99);border:none;cursor:pointer;text-decoration:none;font-family:'Plus Jakarta Sans',sans-serif;box-shadow:0 0 28px rgba(0,153,204,.4),inset 0 1px 0 rgba(255,255,255,.1);transition:all .2s}
+.btn-primary:hover{box-shadow:0 0 40px rgba(0,212,255,.55);transform:translateY(-2px)}
+.btn-outline{padding:.9rem 2.1rem;border-radius:8px;font-size:.9rem;font-weight:600;color:var(--cyan);background:transparent;border:1px solid rgba(0,212,255,.28);cursor:pointer;text-decoration:none;font-family:'Plus Jakarta Sans',sans-serif;transition:all .2s}
+.btn-outline:hover{background:rgba(0,212,255,.06);border-color:rgba(0,212,255,.6)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+.hero-chips{margin-top:3rem;animation:fadeUp .8s .4s ease both}
+.chips-label{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--text3);letter-spacing:.15em;text-transform:uppercase;margin-bottom:.75rem}
+.chips-row{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
+.chip{display:flex;align-items:center;gap:.45rem;padding:.38rem .875rem;background:var(--panel);border:1px solid var(--border);border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:.7rem}
+.chip-val{color:var(--text1);font-weight:600}
+.chip-lbl{color:var(--text3)}
+.stats-bar{position:relative;z-index:1;background:var(--navy);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:2.25rem 4rem;display:grid;grid-template-columns:repeat(4,1fr);gap:2rem}
+.stat-item{text-align:center}
+.stat-num{font-family:'Plus Jakarta Sans',sans-serif;font-size:2.25rem;font-weight:800;color:var(--cyan);letter-spacing:-.02em;text-shadow:0 0 20px rgba(0,212,255,.25)}
+.stat-desc{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--text3);text-transform:uppercase;letter-spacing:.12em;margin-top:.3rem}
+section{position:relative;z-index:1}
+.s-inner{max-width:1180px;margin:0 auto;padding:6rem 2rem}
+.s-label{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.2em;margin-bottom:1rem;opacity:.8}
+.s-label::before{content:'// '}
+.s-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(1.85rem,4vw,3rem);font-weight:800;line-height:1.08;letter-spacing:-.025em;margin-bottom:1.25rem}
+.s-sub{font-size:.95rem;color:var(--text2);max-width:480px;line-height:1.8;font-weight:300}
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;margin-top:4rem}
+.feat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.75rem;position:relative;overflow:hidden;transition:border-color .3s,transform .3s,opacity .6s,box-shadow .3s;opacity:0;transform:translateY(20px)}
+.feat-card.visible{opacity:1;transform:translateY(0)}
+.feat-card::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--cyan2),transparent);opacity:0;transition:opacity .3s}
+.feat-card:hover{border-color:var(--border-glow);transform:translateY(-5px);box-shadow:0 12px 40px rgba(0,0,0,.3)}
+.feat-card:hover::after{opacity:.5}
+.feat-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.15rem;margin-bottom:1.25rem;border:1px solid var(--border)}
+.fi-c{background:rgba(0,212,255,.07);border-color:rgba(0,212,255,.18)}
+.fi-g{background:rgba(0,255,136,.07);border-color:rgba(0,255,136,.18)}
+.fi-r{background:rgba(255,59,92,.07);border-color:rgba(255,59,92,.18)}
+.fi-a{background:rgba(245,158,11,.07);border-color:rgba(245,158,11,.18)}
+.fi-p{background:rgba(168,85,247,.07);border-color:rgba(168,85,247,.18)}
+.fi-b{background:rgba(59,130,246,.07);border-color:rgba(59,130,246,.18)}
+.feat-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:1rem;font-weight:700;margin-bottom:.5rem;color:var(--white)}
+.feat-desc{font-size:.82rem;color:var(--text2);line-height:1.75;font-weight:300}
+.platform-bg{background:var(--navy);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.platform-grid{max-width:1180px;margin:0 auto;padding:6rem 2rem;display:grid;grid-template-columns:1fr 1.1fr;gap:5rem;align-items:center}
+.mockup{background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:0 0 80px rgba(0,0,0,.6)}
+.m-bar{background:rgba(0,0,0,.4);padding:.6rem 1rem;display:flex;align-items:center;gap:.4rem;border-bottom:1px solid var(--border)}
+.m-dot{width:8px;height:8px;border-radius:50%}
+.m-addr{margin-left:.5rem;font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--text3)}
+.m-body{padding:1.25rem;display:flex;flex-direction:column;gap:.5rem}
+.m-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;margin-bottom:.5rem}
+.m-stat{background:var(--card);border:1px solid var(--border);border-radius:7px;padding:.65rem;text-align:center}
+.m-stat-num{font-family:'JetBrains Mono',monospace;font-size:1.25rem;font-weight:700}
+.m-stat-lbl{font-size:.58rem;color:var(--text3);margin-top:.1rem;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.08em}
+.m-row{background:var(--card);border:1px solid var(--border);border-radius:7px;padding:.6rem .875rem;display:flex;align-items:center;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:.7rem}
+.m-row.cr{border-color:rgba(255,59,92,.2);background:rgba(255,59,92,.04)}
+.m-row.hi{border-color:rgba(245,158,11,.2);background:rgba(245,158,11,.04)}
+.m-row.me{border-color:rgba(0,212,255,.2);background:rgba(0,212,255,.04)}
+.m-row.lo{border-color:rgba(0,255,136,.2);background:rgba(0,255,136,.04)}
+.m-ref{color:var(--cyan);font-weight:600}
+.m-badge{font-size:.58rem;font-weight:700;padding:.12rem .38rem;border-radius:3px}
+.bc{background:rgba(255,59,92,.2);color:#ff7090}
+.bh{background:rgba(245,158,11,.2);color:#fbbf24}
+.bm{background:rgba(0,212,255,.2);color:var(--cyan)}
+.bl{background:rgba(0,255,136,.2);color:var(--green)}
+.check-list{display:flex;flex-direction:column;gap:.875rem;margin-top:1.5rem}
+.check-item{display:flex;align-items:flex-start;gap:.75rem;font-size:.875rem;color:var(--text2);font-weight:300}
+.check-mark{color:var(--cyan);font-family:'JetBrains Mono',monospace;flex-shrink:0}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem;margin-top:4rem;position:relative}
+.steps::before{content:'';position:absolute;top:27px;left:14%;right:14%;height:1px;background:linear-gradient(90deg,transparent,var(--border-glow) 20%,var(--border-glow) 80%,transparent)}
+.step{text-align:center;opacity:0;transform:translateY(20px);transition:opacity .6s ease,transform .6s ease}
+.step.visible{opacity:1;transform:translateY(0)}
+.step-num{width:54px;height:54px;border-radius:50%;background:var(--card);border:1px solid var(--border-glow);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.9rem;font-weight:600;color:var(--cyan);margin:0 auto 1.25rem;position:relative;z-index:1;box-shadow:0 0 20px rgba(0,212,255,.1)}
+.step-title{font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:.925rem;margin-bottom:.4rem;color:var(--white)}
+.step-desc{font-size:.79rem;color:var(--text2);line-height:1.65;font-weight:300}
+.price-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;margin-top:4rem}
+.p-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:2rem;position:relative;overflow:hidden;transition:all .3s;opacity:0;transform:translateY(20px)}
+.p-card.visible{opacity:1;transform:translateY(0)}
+.p-card.feat{border-color:rgba(0,212,255,.35);box-shadow:0 0 40px rgba(0,212,255,.07)}
+.p-card.feat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--cyan),transparent)}
+.p-rec{position:absolute;top:0;left:50%;transform:translateX(-50%);background:var(--cyan2);color:var(--white);font-size:.58rem;font-weight:700;padding:.18rem .875rem;border-radius:0 0 6px 6px;font-family:'JetBrains Mono',monospace;letter-spacing:.1em}
+.p-plan{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--text3);text-transform:uppercase;letter-spacing:.2em;margin-bottom:.875rem}
+.p-amount{font-family:'Plus Jakarta Sans',sans-serif;font-size:2.75rem;font-weight:800;color:var(--white);line-height:1;letter-spacing:-.03em}
+.p-amount span{font-size:.95rem;color:var(--text2);font-weight:400;font-family:'Inter',sans-serif}
+.p-divider{height:1px;background:var(--border);margin:1.25rem 0}
+.p-feat{display:flex;align-items:center;gap:.55rem;font-size:.81rem;color:var(--text2);padding:.28rem 0;font-weight:300}
+.p-feat .ck{color:var(--green);font-size:.72rem;flex-shrink:0;font-family:'JetBrains Mono',monospace}
+.p-feat .ds{color:var(--text3);font-size:.72rem;flex-shrink:0}
+.p-btn{display:block;width:100%;padding:.75rem;border-radius:8px;text-align:center;font-size:.85rem;font-weight:700;text-decoration:none;margin-top:1.5rem;font-family:'Plus Jakarta Sans',sans-serif;transition:all .2s;cursor:pointer;border:none}
+.p-btn.out{color:var(--cyan);border:1px solid rgba(0,212,255,.28);background:transparent}
+.p-btn.out:hover{background:rgba(0,212,255,.06)}
+.p-btn.sol{color:var(--white);background:linear-gradient(135deg,var(--cyan2),#004d99);box-shadow:0 0 20px rgba(0,153,204,.3)}
+.p-btn.sol:hover{box-shadow:0 0 32px rgba(0,212,255,.45);transform:translateY(-1px)}
+.cta-wrap{position:relative;z-index:1;background:var(--black)}
+.cta-inner{max-width:800px;margin:0 auto;padding:7rem 2rem;text-align:center;position:relative}
+.cta-glow{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:600px;height:300px;background:radial-gradient(ellipse,rgba(0,212,255,.055),transparent 70%);pointer-events:none}
+.cta-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(2rem,5vw,3.5rem);font-weight:800;line-height:1.08;letter-spacing:-.03em;margin-bottom:1.25rem}
+.cta-title span{background:linear-gradient(135deg,var(--cyan),#00aaff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.cta-sub{font-size:.95rem;color:var(--text2);margin-bottom:2.5rem;font-weight:300;max-width:430px;margin-left:auto;margin-right:auto;line-height:1.75}
+footer{border-top:1px solid var(--border);background:var(--navy);padding:2.5rem 2rem}
+.footer-inner{max-width:1180px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1.5rem}
+.f-logo{font-family:'Plus Jakarta Sans',sans-serif;font-size:1rem;font-weight:700;color:var(--white)}
+.f-logo span{color:var(--cyan)}
+.f-links{display:flex;gap:1.5rem}
+.f-links a{font-size:.75rem;color:var(--text3);text-decoration:none;font-family:'JetBrains Mono',monospace;transition:color .2s}
+.f-links a:hover{color:var(--cyan)}
+.f-copy{font-size:.7rem;color:var(--text3);font-family:'JetBrains Mono',monospace}
+@media(max-width:900px){.feat-grid,.price-grid,.steps{grid-template-columns:1fr 1fr}.stats-bar{grid-template-columns:1fr 1fr;padding:2rem}.platform-grid{grid-template-columns:1fr}.nav-links{display:none}.steps::before{display:none}}
+@media(max-width:600px){.feat-grid,.price-grid,.steps{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<nav>
+  <a href="/" class="nav-logo">
+    <div class="nav-logo-icon">&#128737;</div>
+    <div class="logo-text">Defence<span>IQ</span></div>
+  </a>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#platform">Platform</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#how-it-works">How It Works</a>
+  </div>
+  <div class="nav-cta">
+    <a href="/login" class="btn-ghost">Sign In</a>
+    <a href="/register" class="btn-nav">Get Started &rarr;</a>
+  </div>
+</nav>
+<div class="ticker-wrap">
+  <div class="ticker-track">
+    <div class="t-item"><span class="t-dot r"></span><span style="color:var(--text3)">THREAT&nbsp;</span><span style="color:var(--red);font-weight:600">IP:185.220.101.1</span>&nbsp;<span style="color:var(--text3)">AbuseIPDB: 100/100</span></div>
+    <div class="t-item"><span class="t-dot a"></span><span style="color:var(--text3)">ALERT&nbsp;</span><span style="color:var(--amber);font-weight:600">BVN Fraud</span>&nbsp;<span style="color:var(--text3)">NGN 12,500,000 exposure</span></div>
+    <div class="t-item"><span class="t-dot r"></span><span style="color:var(--text3)">PHISH&nbsp;</span><span style="color:var(--red);font-weight:600">fakebank-ng.com</span>&nbsp;<span style="color:var(--text3)">VirusTotal: 14 engines</span></div>
+    <div class="t-item"><span class="t-dot g"></span><span style="color:var(--text3)">RESOLVED&nbsp;</span><span style="color:var(--green);font-weight:600">Case DIQ-4XKMT9Q</span>&nbsp;<span style="color:var(--text3)">Account Takeover</span></div>
+    <div class="t-item"><span class="t-dot a"></span><span style="color:var(--text3)">AI SCORE&nbsp;</span><span style="color:var(--amber);font-weight:600">Risk: 78/100</span>&nbsp;<span style="color:var(--text3)">SIM Swap Fraud</span></div>
+    <div class="t-item"><span class="t-dot r"></span><span style="color:var(--text3)">BREACH&nbsp;</span><span style="color:var(--red);font-weight:600">HaveIBeenPwned</span>&nbsp;<span style="color:var(--text3)">5 breach records</span></div>
+    <div class="t-item"><span class="t-dot a"></span><span style="color:var(--text3)">ALERT&nbsp;</span><span style="color:var(--amber);font-weight:600">Loan Fraud</span>&nbsp;<span style="color:var(--text3)">NGN 50M flagged</span></div>
+    <div class="t-item"><span class="t-dot g"></span><span style="color:var(--text3)">CBN REPORT&nbsp;</span><span style="color:var(--green);font-weight:600">Generated</span>&nbsp;<span style="color:var(--text3)">March 2026 PDF</span></div>
+    <div class="t-item"><span class="t-dot r"></span><span style="color:var(--text3)">THREAT&nbsp;</span><span style="color:var(--red);font-weight:600">IP:185.220.101.1</span>&nbsp;<span style="color:var(--text3)">AbuseIPDB: 100/100</span></div>
+    <div class="t-item"><span class="t-dot a"></span><span style="color:var(--text3)">ALERT&nbsp;</span><span style="color:var(--amber);font-weight:600">BVN Fraud</span>&nbsp;<span style="color:var(--text3)">NGN 12,500,000 exposure</span></div>
+    <div class="t-item"><span class="t-dot r"></span><span style="color:var(--text3)">PHISH&nbsp;</span><span style="color:var(--red);font-weight:600">fakebank-ng.com</span>&nbsp;<span style="color:var(--text3)">VirusTotal: 14 engines</span></div>
+    <div class="t-item"><span class="t-dot g"></span><span style="color:var(--text3)">RESOLVED&nbsp;</span><span style="color:var(--green);font-weight:600">Case DIQ-4XKMT9Q</span>&nbsp;<span style="color:var(--text3)">Account Takeover</span></div>
+    <div class="t-item"><span class="t-dot a"></span><span style="color:var(--text3)">AI SCORE&nbsp;</span><span style="color:var(--amber);font-weight:600">Risk: 78/100</span>&nbsp;<span style="color:var(--text3)">SIM Swap Fraud</span></div>
+    <div class="t-item"><span class="t-dot r"></span><span style="color:var(--text3)">BREACH&nbsp;</span><span style="color:var(--red);font-weight:600">HaveIBeenPwned</span>&nbsp;<span style="color:var(--text3)">5 breach records</span></div>
+    <div class="t-item"><span class="t-dot a"></span><span style="color:var(--text3)">ALERT&nbsp;</span><span style="color:var(--amber);font-weight:600">Loan Fraud</span>&nbsp;<span style="color:var(--text3)">NGN 50M flagged</span></div>
+    <div class="t-item"><span class="t-dot g"></span><span style="color:var(--text3)">CBN REPORT&nbsp;</span><span style="color:var(--green);font-weight:600">Generated</span>&nbsp;<span style="color:var(--text3)">March 2026 PDF</span></div>
+  </div>
+</div>
+<section class="hero">
+  <div>
+    <div class="hero-badge"><span class="pulse-dot"></span>LIVE THREAT INTELLIGENCE &mdash; POWERED BY CLAUDE AI</div>
+    <h1><span class="l1">The Intelligent Way to</span><span class="l2">Fight Financial Fraud</span><span class="l3">Globally</span></h1>
+    <p class="hero-sub">AI-powered fraud detection, risk scoring, and regulatory compliance reporting &mdash; built for banks, fintechs, and financial institutions worldwide.</p>
+    <div class="hero-actions">
+      <a href="/register" class="btn-primary">&#8853; Start Free Trial</a>
+      <a href="#platform" class="btn-outline">&#9678; See Platform &rarr;</a>
+    </div>
+    <div class="hero-chips">
+      <div class="chips-label">// live intelligence metrics</div>
+      <div class="chips-row">
+        <div class="chip"><span class="t-dot r"></span><span class="chip-val">1,247</span><span class="chip-lbl">&nbsp;threats blocked today</span></div>
+        <div class="chip"><span class="t-dot a"></span><span class="chip-val">.4B</span><span class="chip-lbl">&nbsp;fraud exposure flagged</span></div>
+        <div class="chip"><span class="t-dot g"></span><span class="chip-val">98.3%</span><span class="chip-lbl">&nbsp;AI accuracy rate</span></div>
+        <div class="chip"><span class="t-dot g"></span><span class="chip-val">&lt;30s</span><span class="chip-lbl">&nbsp;avg AI score time</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+<div class="stats-bar">
+  <div class="stat-item"><div class="stat-num">120+</div><div class="stat-desc">Financial Institutions</div></div>
+  <div class="stat-item"><div class="stat-num">$2B+</div><div class="stat-desc">Fraud Prevented</div></div>
+  <div class="stat-item"><div class="stat-num">99.9%</div><div class="stat-desc">Platform Uptime</div></div>
+  <div class="stat-item"><div class="stat-num">&lt;30s</div><div class="stat-desc">AI Risk Score Time</div></div>
+</div>
+<section id="features">
+  <div class="s-inner">
+    <div class="s-label">Capabilities</div>
+    <h2 class="s-title">Intelligence-grade tools<br>for financial crime teams</h2>
+    <p class="s-sub">Every feature engineered to cut detection time, improve accuracy, and meet compliance obligations &mdash; wherever you operate.</p>
+    <div class="feat-grid">
+      <div class="feat-card"><div class="feat-icon fi-c">&#9678;</div><div class="feat-title">AI Risk Scoring</div><div class="feat-desc">Every fraud case scored 0&ndash;100 by Claude AI with reasoning, risk factors, and recommended actions &mdash; automatically on submission.</div></div>
+      <div class="feat-card"><div class="feat-icon fi-r">&#127760;</div><div class="feat-title">Dark Web Monitoring</div><div class="feat-desc">Cross-reference indicators against AbuseIPDB, VirusTotal, HaveIBeenPwned, OpenPhish and EmailRep in real time.</div></div>
+      <div class="feat-card"><div class="feat-icon fi-g">&#8801;</div><div class="feat-title">Compliance PDF Reports</div><div class="feat-desc">Auto-generate regulator-ready reports with case registers, AI risk scores, and executive summaries &mdash; one click.</div></div>
+      <div class="feat-card"><div class="feat-icon fi-a">&#8859;</div><div class="feat-title">Slack &amp; Teams Alerts</div><div class="feat-desc">Real-time webhook notifications to your fraud team the moment a high-severity case is logged. Never miss a critical alert.</div></div>
+      <div class="feat-card"><div class="feat-icon fi-p">&#9672;</div><div class="feat-title">Multi-Tenant Platform</div><div class="feat-desc">Full organisational isolation with role-based access &mdash; admin, analyst, and viewer roles with comprehensive audit logging.</div></div>
+      <div class="feat-card"><div class="feat-icon fi-b">&#8997;</div><div class="feat-title">REST API Access</div><div class="feat-desc">Integrate DefenceIQ directly into your core banking system or fraud detection pipeline via a documented REST API.</div></div>
+    </div>
+  </div>
+</section>
+<section id="platform" class="platform-bg">
+  <div class="platform-grid">
+    <div>
+      <div class="s-label">Platform</div>
+      <h2 class="s-title">A SOC-grade dashboard built for financial crime teams</h2>
+      <p class="s-sub">Trusted by banks and fintechs globally &mdash; tracking account takeovers, identity fraud, phishing, SIM swaps, loan fraud, and more.</p>
+      <div class="check-list">
+        <div class="check-item"><span class="check-mark">&#10003;</span>AI scores every case automatically on submission</div>
+        <div class="check-item"><span class="check-mark">&#10003;</span>One-click CBN &amp; regulatory report generation</div>
+        <div class="check-item"><span class="check-mark">&#10003;</span>Multi-source threat intelligence scanning</div>
+        <div class="check-item"><span class="check-mark">&#10003;</span>Instant Slack &amp; Teams fraud alerts</div>
+        <div class="check-item"><span class="check-mark">&#10003;</span>Full audit trail for every action</div>
+      </div>
+    </div>
+    <div>
+      <div class="mockup">
+        <div class="m-bar">
+          <div class="m-dot" style="background:#ff5f56"></div>
+          <div class="m-dot" style="background:#ffbd2e"></div>
+          <div class="m-dot" style="background:#27c93f"></div>
+          <div class="m-addr">defenceiq.io/dashboard</div>
+        </div>
+        <div class="m-body">
+          <div class="m-stats">
+            <div class="m-stat"><div class="m-stat-num" style="color:var(--cyan)">24</div><div class="m-stat-lbl">Total</div></div>
+            <div class="m-stat"><div class="m-stat-num" style="color:var(--red)">8</div><div class="m-stat-lbl">Open</div></div>
+            <div class="m-stat"><div class="m-stat-num" style="color:var(--amber)">3</div><div class="m-stat-lbl">Critical</div></div>
+            <div class="m-stat"><div class="m-stat-num" style="color:var(--green)">13</div><div class="m-stat-lbl">Resolved</div></div>
+          </div>
+          <div class="m-row cr"><span class="m-ref">DIQ-8YXCUW1Q</span><span style="color:var(--text2);font-size:.65rem">Loan Fraud &bull; BVN</span><span class="m-badge bc">CRITICAL</span><span style="color:var(--red);font-weight:700;font-family:'JetBrains Mono',monospace">92</span></div>
+          <div class="m-row hi"><span class="m-ref">DIQ-3KMPL8W2</span><span style="color:var(--text2);font-size:.65rem">SIM Swap &bull; Phone</span><span class="m-badge bh">HIGH</span><span style="color:var(--amber);font-weight:700;font-family:'JetBrains Mono',monospace">74</span></div>
+          <div class="m-row me"><span class="m-ref">DIQ-7TQRN5X9</span><span style="color:var(--text2);font-size:.65rem">Phishing &bull; URL</span><span class="m-badge bm">MEDIUM</span><span style="color:var(--cyan);font-weight:700;font-family:'JetBrains Mono',monospace">51</span></div>
+          <div class="m-row lo"><span class="m-ref">DIQ-2WXVB4Z6</span><span style="color:var(--text2);font-size:.65rem">Card Fraud &bull; Account</span><span class="m-badge bl">LOW</span><span style="color:var(--green);font-weight:700;font-family:'JetBrains Mono',monospace">28</span></div>
+          <div style="margin-top:.75rem;background:rgba(0,212,255,.05);border:1px solid rgba(0,212,255,.15);border-radius:7px;padding:.75rem;font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--cyan)">&#9678; AI RISK ASSESSMENT &mdash; DIQ-8YXCUW1Q<br><span style="color:var(--text2);font-weight:300;font-size:.65rem">Score: <strong style="color:var(--red)">92/100 CRITICAL</strong> &mdash; BVN flagged for high-severity loan fraud with NGN 50M exposure.</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<section id="how-it-works">
+  <div class="s-inner">
+    <div class="s-label">Process</div>
+    <h2 class="s-title">From indicator to insight<br>in under a minute</h2>
+    <div class="steps">
+      <div class="step"><div class="step-num">01</div><div class="step-title">Submit Indicator</div><div class="step-desc">Log a fraud indicator &mdash; BVN, phone, IP, email, account number, URL &mdash; via dashboard or REST API.</div></div>
+      <div class="step"><div class="step-num">02</div><div class="step-title">AI Scores Risk</div><div class="step-desc">Claude AI analyses the case and returns a 0&ndash;100 risk score with reasoning and recommended actions in under 30 seconds.</div></div>
+      <div class="step"><div class="step-num">03</div><div class="step-title">Threat Scan</div><div class="step-desc">Indicators cross-referenced against five external threat intelligence feeds for real-time corroboration.</div></div>
+      <div class="step"><div class="step-num">04</div><div class="step-title">Report &amp; Alert</div><div class="step-desc">Your team is alerted instantly via Slack or Teams. Compliance reports auto-generated for your regulator.</div></div>
+    </div>
+  </div>
+</section>
+<section id="pricing" style="background:var(--navy);border-top:1px solid var(--border)">
+  <div class="s-inner">
+    <div class="s-label">Pricing</div>
+    <h2 class="s-title">Simple, transparent pricing</h2>
+    <p class="s-sub">No hidden fees. Cancel any time. Start free, scale as you grow.</p>
+    <div class="price-grid">
+      <div class="p-card">
+        <div class="p-plan">Free</div>
+        <div class="p-amount">&pound;0<span>/month</span></div>
+        <div class="p-divider"></div>
+        <div class="p-feat"><span class="ck">&#10003;</span>10 cases per month</div>
+        <div class="p-feat"><span class="ck">&#10003;</span>1 user</div>
+        <div class="p-feat"><span class="ck">&#10003;</span>Email alerts</div>
+        <div class="p-feat"><span class="ck">&#10003;</span>Training modules</div>
+        <div class="p-feat"><span class="ds">&mdash;</span>AI risk scoring</div>
+        <div class="p-feat"><span class="ds">&mdash;</span>Compliance reports</div>
+        <div class="p-feat"><span class="ds">&mdash;</span>API access</div>
+        <a href="/register" class="p-btn out">Get Started Free</a>
+      </div>
+      <div class="p-card feat">
+        <div class="p-rec">MOST POPULAR</div>
+        <div class="p-plan" style="margin-top:.5rem">Professional</div>
+        <div class="p-amount">&pound;49<span>/month</span></div>
+        <div class="p-divider"></div>
+        <div class="p-feat"><span class="ck">&#10003;</span>500 cases per month</div>
+        <div class="p-feat"><span class="ck">&#10003;</span>10 users</div>
+        <div class="p-feat"><span class="ck">&#10003;</span>AI risk scoring</div>
+        <div class="p-feat"><span class="ck">&#10003;</span>Compliance PDF reports</div>
+        <div class="p-feat"><span class="ck">&#10003;</span>REST API access</div>
+        <div class="p-feat"><span class="ck">&#10003;</span>Slack &amp; Teams alerts</div>
+        <div class="p-feat"><span class="ck">&#10003;</span>Priority support</div>
+        <a href="/register" class="p-btn sol">Start Professional &rarr;</a>
+      </div>
+      <div class="p-card">
+        <div class="p-plan">Enterprise</div>
+        <div class="p-amount">&pound;199<span>/month</span></div>
+        <div class="p-divider"></div>
+        <div class="p-feat"><span class="ck">&#10003;</span>Unlimited cases</div>
+        <div class="p-feat"><span class="ck">&#10003;</span>Unlimited users</div>
+        <div class="p-feat"><span class="ck">&#10003;</span>All Professional features</div>
+        <div class="p-feat"><span class="ck">&#10003;</span>Custom branding</div>
+        <div class="p-feat"><span class="ck">&#10003;</span>Dedicated support</div>
+        <div class="p-feat"><span class="ck">&#10003;</span>Full audit logs &amp; SLA</div>
+        <div class="p-feat"><span class="ck">&#10003;</span>On-premise option</div>
+        <a href="mailto:sales@defenceiq.io" class="p-btn out">Contact Sales &rarr;</a>
+      </div>
+    </div>
+  </div>
+</section>
+<div class="cta-wrap">
+  <div class="cta-inner">
+    <div class="cta-glow"></div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.2em;margin-bottom:1.25rem;opacity:.8">// Get Started Today</div>
+    <h2 class="cta-title">Stop fraud before<br><span>it costs you more</span></h2>
+    <p class="cta-sub">Join financial institutions worldwide using DefenceIQ to detect, score, and report fraud faster than ever before.</p>
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap">
+      <a href="/register" class="btn-primary">&#8853; Start Free &mdash; No Card Required</a>
+      <a href="mailto:sales@defenceiq.io" class="btn-outline">Talk to Sales &rarr;</a>
+    </div>
+  </div>
+</div>
+<footer>
+  <div class="footer-inner">
+    <div class="f-logo">Defence<span>IQ</span> <span style="color:var(--text3);font-family:'JetBrains Mono',monospace;font-size:.65rem;font-weight:400">by Fa3Tech Limited</span></div>
+    <div class="f-links"><a href="#features">Features</a><a href="#pricing">Pricing</a><a href="/login">Sign In</a><a href="mailto:sales@defenceiq.io">Contact</a></div>
+    <div class="f-copy">&copy; 2026 Fa3Tech Limited. All rights reserved.</div>
+  </div>
+</footer>
+<script>
+const obs=new IntersectionObserver((entries)=>{entries.forEach((e,i)=>{if(e.isIntersecting){setTimeout(()=>e.target.classList.add('visible'),i*80)}})},{threshold:0.1});
+document.querySelectorAll('.feat-card,.step,.p-card').forEach(el=>obs.observe(el));
+</script>
+</body>
+</html>

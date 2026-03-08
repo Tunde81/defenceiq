@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% block title %}Sanctions Screening — DefenceIQ{% endblock %}
+{% block content %}
+<div style="max-width:1100px;margin:0 auto;padding:2rem;">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem;">
+    <div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.15em;margin-bottom:.4rem;opacity:.7;">// Compliance</div>
+      <h1 style="font-family:'Syne',sans-serif;font-size:1.75rem;font-weight:800;letter-spacing:-.02em;">Sanctions Screening</h1>
+      <p style="font-size:.85rem;color:var(--text2);margin-top:.35rem;font-weight:300;">Screen names and entities against UN Security Council and UK HMT (OFSI) sanctions lists with fuzzy matching.</p>
+    </div>
+    {% if stats %}
+    <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
+      {% for label, value, color in [('UN SC Entries', stats.un_count, '#3b82f6'), ('HMT Entries', stats.hmt_count, '#8b5cf6'), ('Total Screened', stats.total, '#06b6d4')] %}
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:.75rem 1.25rem;text-align:center;min-width:100px;">
+        <div style="font-family:'Syne',sans-serif;font-size:1.25rem;font-weight:800;color:{{ color }};">{{ value }}</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-top:.2rem;">{{ label }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  <div style="display:grid;grid-template-columns:300px 1fr;gap:1.5rem;align-items:start;">
+
+    <!-- LEFT: Form + sources -->
+    <div style="display:flex;flex-direction:column;gap:1.25rem;">
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1rem;opacity:.8;">// Screen Name / Entity</div>
+        <form method="POST" action="{{ url_for('sanctions_screen') }}">
+          <div style="margin-bottom:1rem;">
+            <label style="display:block;font-size:.72rem;font-weight:600;color:var(--text2);margin-bottom:.4rem;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.05em;">Full Name or Entity</label>
+            <input type="text" name="query_name" required value="{{ last_query or '' }}"
+              style="width:100%;background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:.6rem .75rem;color:var(--text1);font-size:.82rem;font-family:'JetBrains Mono',monospace;box-sizing:border-box;"
+              placeholder="e.g. John Michael Smith">
+          </div>
+          <div style="margin-bottom:1rem;">
+            <label style="display:block;font-size:.72rem;font-weight:600;color:var(--text2);margin-bottom:.4rem;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.05em;">Match Threshold</label>
+            <select name="threshold" style="width:100%;background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:.6rem .75rem;color:var(--text1);font-size:.82rem;font-family:'JetBrains Mono',monospace;">
+              <option value="90">Exact only (90%+)</option>
+              <option value="82" selected>Standard (82%+)</option>
+              <option value="75">Broad (75%+)</option>
+            </select>
+          </div>
+          <div style="margin-bottom:1.25rem;">
+            <label style="display:block;font-size:.72rem;font-weight:600;color:var(--text2);margin-bottom:.4rem;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.05em;">Link to Case (optional)</label>
+            <input type="text" name="case_id"
+              style="width:100%;background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:.6rem .75rem;color:var(--text1);font-size:.82rem;font-family:'JetBrains Mono',monospace;box-sizing:border-box;"
+              placeholder="Case ID">
+          </div>
+          <button type="submit" style="width:100%;background:linear-gradient(135deg,#0f3460,#16213e);border:1px solid var(--cyan);border-radius:8px;padding:.7rem;color:var(--cyan);font-family:'JetBrains Mono',monospace;font-size:.78rem;font-weight:700;letter-spacing:.08em;cursor:pointer;transition:all .2s;" onmouseover="this.style.background='rgba(0,212,255,.1)'" onmouseout="this.style.background='linear-gradient(135deg,#0f3460,#16213e)'">
+            ⚖ SCREEN NOW
+          </button>
+        </form>
+      </div>
+
+      <!-- Lists info -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1rem;opacity:.8;">// Sanctions Lists</div>
+        {% for icon, name, desc, color in [
+          ('🇺🇳','UN Security Council','Al-Qaida, Taliban, DPRK, ISIS','#3b82f6'),
+          ('🇬🇧','UK HMT (OFSI)','Russia, Iran, Myanmar + global regimes','#8b5cf6'),
+        ] %}
+        <div style="padding:.875rem;background:var(--panel);border-radius:8px;border-left:3px solid {{ color }};margin-bottom:.75rem;">
+          <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.25rem;">
+            <span>{{ icon }}</span>
+            <span style="font-size:.8rem;font-weight:700;color:var(--text1);">{{ name }}</span>
+            <span style="font-size:.58rem;font-weight:700;padding:.1rem .35rem;border-radius:3px;background:rgba(16,185,129,.1);color:#10b981;border:1px solid rgba(16,185,129,.2);font-family:'JetBrains Mono',monospace;">FREE</span>
+          </div>
+          <div style="font-size:.72rem;color:var(--text3);font-family:'JetBrains Mono',monospace;">{{ desc }}</div>
+        </div>
+        {% endfor %}
+        <div style="font-size:.7rem;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:.75rem;padding:.6rem;background:rgba(0,0,0,.2);border-radius:6px;line-height:1.5;">
+          Lists cached for 24h and refreshed automatically. Fuzzy matching handles name variations, aliases, and transliterations.
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Results -->
+    <div style="display:flex;flex-direction:column;gap:1.25rem;">
+
+      {% if result %}
+      {% set rc = {'critical':'#ef4444','high':'#f97316','medium':'#f59e0b','low':'#3b82f6','clean':'#10b981'}.get(result.overall_risk,'#6b7280') %}
+
+      <!-- Result banner -->
+      <div style="background:var(--card);border:1px solid {{ rc }};border-radius:12px;padding:1.5rem;position:relative;overflow:hidden;">
+        <div style="position:absolute;top:0;left:0;right:0;height:3px;background:{{ rc }};"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:{% if result.match_count > 0 %}1.25rem{% else %}0{% endif %};">
+          <div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.3rem;">Screening Result</div>
+            <div style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;color:var(--text1);">{{ result.query }}</div>
+            <div style="font-size:.72rem;color:var(--text3);margin-top:.25rem;font-family:'JetBrains Mono',monospace;">{{ result.total_screened|default(0) }} entries screened · {{ result.match_count }} match(es)</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;color:{{ rc }};text-transform:uppercase;">
+              {% if result.overall_risk == 'clean' %}✓ CLEAR{% else %}⚠ {{ result.overall_risk.upper() }}{% endif %}
+            </div>
+            <div style="font-size:.7rem;color:var(--text3);font-family:'JetBrains Mono',monospace;">
+              UN: {{ result.un_matches }} · HMT: {{ result.hmt_matches }}
+            </div>
+          </div>
+        </div>
+
+        {% if result.match_count == 0 %}
+        <div style="padding:.75rem;background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);border-radius:7px;font-size:.78rem;color:#10b981;font-family:'JetBrains Mono',monospace;">
+          ✓ No matches found on UN Security Council or UK HMT sanctions lists.
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Matches -->
+      {% if result.matches %}
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1.25rem;opacity:.8;">// Matches Found ({{ result.match_count }})</div>
+        <div style="display:flex;flex-direction:column;gap:.875rem;">
+          {% for match in result.matches %}
+          {% set mc = {'exact':'#ef4444','strong':'#f97316','possible':'#f59e0b'}.get(match.match_type,'#6b7280') %}
+          <div style="padding:1rem;background:var(--panel);border-radius:8px;border-left:3px solid {{ mc }};">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:.5rem;">
+              <div>
+                <div style="font-size:.85rem;font-weight:700;color:var(--text1);font-family:'JetBrains Mono',monospace;">{{ match.name }}</div>
+                {% if match.matched_on != match.name %}
+                <div style="font-size:.7rem;color:var(--text3);margin-top:.15rem;">Matched on: {{ match.matched_on }}</div>
+                {% endif %}
+              </div>
+              <div style="text-align:right;flex-shrink:0;">
+                <div style="font-size:1.1rem;font-weight:800;color:{{ mc }};font-family:'JetBrains Mono',monospace;">{{ match.score }}%</div>
+                <div style="font-size:.62rem;color:{{ mc }};font-family:'JetBrains Mono',monospace;text-transform:uppercase;">{{ match.match_type }}</div>
+              </div>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:.5rem;">
+              <span style="font-size:.65rem;font-weight:700;padding:.2rem .5rem;border-radius:4px;background:rgba(59,130,246,.1);color:#3b82f6;border:1px solid rgba(59,130,246,.25);font-family:'JetBrains Mono',monospace;">{{ match.list }}</span>
+              {% if match.list_type %}<span style="font-size:.65rem;font-weight:700;padding:.2rem .5rem;border-radius:4px;background:rgba(139,92,246,.1);color:#8b5cf6;border:1px solid rgba(139,92,246,.25);font-family:'JetBrains Mono',monospace;">{{ match.list_type }}</span>{% endif %}
+              {% if match.type %}<span style="font-size:.65rem;font-weight:700;padding:.2rem .5rem;border-radius:4px;background:rgba(255,255,255,.05);color:var(--text3);border:1px solid var(--border);font-family:'JetBrains Mono',monospace;">{{ match.type }}</span>{% endif %}
+              {% if match.nationality %}<span style="font-size:.65rem;padding:.2rem .5rem;border-radius:4px;background:rgba(255,255,255,.04);color:var(--text3);font-family:'JetBrains Mono',monospace;">🌍 {{ match.nationality }}</span>{% endif %}
+            </div>
+            {% if match.aliases %}
+            <div style="font-size:.72rem;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-bottom:.35rem;">Aliases: {{ match.aliases[:4]|join(', ') }}</div>
+            {% endif %}
+            {% if match.ref %}<div style="font-size:.68rem;color:var(--text3);font-family:'JetBrains Mono',monospace;">Ref: {{ match.ref }} {% if match.listed_on %}· Listed: {{ match.listed_on }}{% endif %}</div>{% endif %}
+            {% if match.comments %}
+            <div style="font-size:.72rem;color:var(--text3);margin-top:.5rem;padding:.5rem;background:rgba(0,0,0,.15);border-radius:5px;line-height:1.5;">{{ match.comments[:150] }}{% if match.comments|length > 150 %}…{% endif %}</div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+      {% endif %}
+
+      <!-- Screening history -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1.25rem;opacity:.8;">// Recent Screenings ({{ history|length }})</div>
+        {% if history %}
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;font-size:.78rem;">
+            <thead><tr style="border-bottom:1px solid var(--border);">
+              {% for h in ['Name Screened','Risk','Matches','UN','HMT','Screened',''] %}
+              <th style="text-align:left;padding:.5rem .75rem;font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;font-weight:600;">{{ h }}</th>
+              {% endfor %}
+            </tr></thead>
+            <tbody>
+            {% for h in history %}
+            {% set hd = h.raw_results|fromjson if h.raw_results else {} %}
+            {% set sc = {'critical':'#ef4444','high':'#f97316','medium':'#f59e0b','low':'#3b82f6','clean':'#10b981'}.get(h.overall_risk,'#6b7280') %}
+            <tr style="border-bottom:1px solid rgba(255,255,255,.04);" onmouseover="this.style.background='rgba(255,255,255,.02)'" onmouseout="this.style.background='transparent'">
+              <td style="padding:.6rem .75rem;font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--text1);">{{ h.indicator_value[:28] }}{% if h.indicator_value|length > 28 %}…{% endif %}</td>
+              <td style="padding:.6rem .75rem;"><span style="font-size:.7rem;font-weight:700;color:{{ sc }};font-family:'JetBrains Mono',monospace;text-transform:uppercase;">{{ h.overall_risk }}</span></td>
+              <td style="padding:.6rem .75rem;color:var(--text3);font-family:'JetBrains Mono',monospace;">{{ hd.get('match_count',0) }}</td>
+              <td style="padding:.6rem .75rem;color:var(--text3);font-family:'JetBrains Mono',monospace;">{{ hd.get('un_matches',0) }}</td>
+              <td style="padding:.6rem .75rem;color:var(--text3);font-family:'JetBrains Mono',monospace;">{{ hd.get('hmt_matches',0) }}</td>
+              <td style="padding:.6rem .75rem;color:var(--text3);font-family:'JetBrains Mono',monospace;font-size:.72rem;">{{ h.scanned_at.strftime('%d %b %H:%M') }}</td>
+              <td style="padding:.6rem .75rem;"><a href="{{ url_for('sanctions_detail', scan_id=h.id) }}" style="font-size:.7rem;font-family:'JetBrains Mono',monospace;color:var(--cyan);text-decoration:none;padding:.2rem .5rem;border:1px solid rgba(0,212,255,.2);border-radius:4px;" onmouseover="this.style.background='rgba(0,212,255,.1)'" onmouseout="this.style.background='transparent'">View →</a></td>
+            </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div style="text-align:center;padding:3rem;color:var(--text3);">
+          <div style="font-size:2rem;margin-bottom:.75rem;opacity:.3;">⚖</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:.78rem;">No screenings yet. Enter a name above.</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

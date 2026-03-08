@@ -1,0 +1,173 @@
+"""
+DefenceIQ Dark Web & Threat Intelligence Monitor
+Uses open threat intelligence feeds to check indicators
+"""
+import requests
+import json
+import hashlib
+from datetime import datetime
+
+# ── FREE THREAT INTEL SOURCES ─────────────────────────────────────
+
+def check_abuseipdb(ip_address, api_key=None):
+    """Check IP against AbuseIPDB"""
+    if not api_key:
+        return {'source': 'AbuseIPDB', 'found': False, 'reason': 'No API key configured'}
+    try:
+        r = requests.get(
+            'https://api.abuseipdb.com/api/v2/check',
+            headers={'Key': api_key, 'Accept': 'application/json'},
+            params={'ipAddress': ip_address, 'maxAgeInDays': 90},
+            timeout=8
+        )
+        data = r.json().get('data', {})
+        score = data.get('abuseConfidenceScore', 0)
+        return {
+            'source': 'AbuseIPDB',
+            'found': score > 0,
+            'score': score,
+            'country': data.get('countryCode'),
+            'isp': data.get('isp'),
+            'total_reports': data.get('totalReports', 0),
+            'risk_level': 'critical' if score >= 75 else 'high' if score >= 50 else 'medium' if score > 0 else 'clean'
+        }
+    except Exception as e:
+        return {'source': 'AbuseIPDB', 'found': False, 'error': str(e)}
+
+def check_virustotal_url(url_or_domain, api_key=None):
+    """Check URL/domain against VirusTotal"""
+    if not api_key:
+        return {'source': 'VirusTotal', 'found': False, 'reason': 'No API key configured'}
+    try:
+        import base64
+        url_id = base64.urlsafe_b64encode(url_or_domain.encode()).decode().strip('=')
+        r = requests.get(
+            f'https://www.virustotal.com/api/v3/urls/{url_id}',
+            headers={'x-apikey': api_key},
+            timeout=8
+        )
+        if r.status_code == 200:
+            stats = r.json().get('data', {}).get('attributes', {}).get('last_analysis_stats', {})
+            malicious = stats.get('malicious', 0)
+            suspicious = stats.get('suspicious', 0)
+            return {
+                'source': 'VirusTotal',
+                'found': malicious > 0 or suspicious > 0,
+                'malicious_engines': malicious,
+                'suspicious_engines': suspicious,
+                'risk_level': 'critical' if malicious >= 5 else 'high' if malicious > 0 else 'medium' if suspicious > 0 else 'clean'
+            }
+        return {'source': 'VirusTotal', 'found': False, 'reason': f'Status {r.status_code}'}
+    except Exception as e:
+        return {'source': 'VirusTotal', 'found': False, 'error': str(e)}
+
+def check_emailrep(email, api_key=None):
+    """Check email reputation"""
+    try:
+        headers = {'Key': api_key} if api_key else {}
+        r = requests.get(
+            f'https://emailrep.io/{email}',
+            headers={**headers, 'User-Agent': 'DefenceIQ/1.0'},
+            timeout=8
+        )
+        if r.status_code == 200:
+            data = r.json()
+            suspicious = data.get('suspicious', False)
+            reputation = data.get('reputation', 'unknown')
+            flags = data.get('details', {}).get('flags', [])
+            return {
+                'source': 'EmailRep',
+                'found': suspicious,
+                'reputation': reputation,
+                'suspicious': suspicious,
+                'flags': flags,
+                'risk_level': 'high' if suspicious else 'clean'
+            }
+        return {'source': 'EmailRep', 'found': False, 'reason': f'Status {r.status_code}'}
+    except Exception as e:
+        return {'source': 'EmailRep', 'found': False, 'error': str(e)}
+
+def check_haveibeenpwned(email):
+    """Check if email appears in known data breaches"""
+    try:
+        r = requests.get(
+            f'https://haveibeenpwned.com/api/v3/breachedaccount/{email}',
+            headers={'hibp-api-key': '', 'User-Agent': 'DefenceIQ/1.0'},
+            timeout=8
+        )
+        if r.status_code == 200:
+            breaches = r.json()
+            return {
+                'source': 'HaveIBeenPwned',
+                'found': True,
+                'breach_count': len(breaches),
+                'breaches': [b.get('Name') for b in breaches[:5]],
+                'risk_level': 'high' if len(breaches) >= 3 else 'medium'
+            }
+        elif r.status_code == 404:
+            return {'source': 'HaveIBeenPwned', 'found': False, 'risk_level': 'clean'}
+        return {'source': 'HaveIBeenPwned', 'found': False, 'reason': f'Status {r.status_code}'}
+    except Exception as e:
+        return {'source': 'HaveIBeenPwned', 'found': False, 'error': str(e)}
+
+def check_openphish(url):
+    """Check URL against OpenPhish feed"""
+    try:
+        r = requests.get('https://openphish.com/feed.txt', timeout=8)
+        if r.status_code == 200:
+            phish_urls = r.text.strip().split('\n')
+            found = any(url.lower() in p.lower() for p in phish_urls)
+            return {
+                'source': 'OpenPhish',
+                'found': found,
+                'risk_level': 'critical' if found else 'clean'
+            }
+        return {'source': 'OpenPhish', 'found': False}
+    except Exception as e:
+        return {'source': 'OpenPhish', 'found': False, 'error': str(e)}
+
+def scan_indicator(indicator_type, indicator_value, api_keys=None):
+    """
+    Main scan function — routes to appropriate intel sources
+    based on indicator type
+    """
+    api_keys = api_keys or {}
+    results = []
+    overall_risk = 'clean'
+    risk_order = ['clean', 'low', 'medium', 'high', 'critical']
+
+    if indicator_type == 'ip':
+        results.append(check_abuseipdb(indicator_value, api_keys.get('abuseipdb')))
+
+    elif indicator_type == 'email':
+        results.append(check_emailrep(indicator_value, api_keys.get('emailrep')))
+        results.append(check_haveibeenpwned(indicator_value))
+
+    elif indicator_type in ['url', 'domain']:
+        results.append(check_virustotal_url(indicator_value, api_keys.get('virustotal')))
+        if 'http' in indicator_value.lower():
+            results.append(check_openphish(indicator_value))
+
+    else:
+        # For BVN, phone, account — use AI-based assessment
+        results.append({
+            'source': 'DefenceIQ Intelligence',
+            'found': False,
+            'reason': f'No external feed available for {indicator_type} indicators. Use AI scoring for risk assessment.',
+            'risk_level': 'unknown'
+        })
+
+    # Calculate overall risk
+    for r in results:
+        level = r.get('risk_level', 'clean')
+        if risk_order.index(level) > risk_order.index(overall_risk):
+            overall_risk = level
+
+    return {
+        'indicator_type': indicator_type,
+        'indicator_value': indicator_value,
+        'scanned_at': datetime.utcnow().isoformat(),
+        'overall_risk': overall_risk,
+        'sources_checked': len(results),
+        'results': results
+    }

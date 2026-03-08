@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Device {{ fp.fingerprint_hash }} — DefenceIQ{% endblock %}
+{% block content %}
+<div style="max-width:900px;margin:0 auto;padding:2rem;">
+  <div style="margin-bottom:1.5rem;">
+    <a href="/device-fingerprints" style="font-size:.72rem;color:var(--text3);text-decoration:none;font-family:'JetBrains Mono',monospace;">← Back to Device Log</a>
+    <h1 style="font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;letter-spacing:-.02em;margin-top:.5rem;">Device: <span style="color:var(--cyan);font-family:'JetBrains Mono',monospace;">{{ fp.fingerprint_hash }}</span></h1>
+  </div>
+
+  {% set rc = {'critical':'#ef4444','high':'#f97316','medium':'#f59e0b','low':'#3b82f6','clean':'#10b981'}.get(fp.risk_level,'#6b7280') %}
+
+  <!-- Risk banner -->
+  <div style="background:var(--card);border:1px solid {{ rc }};border-radius:12px;padding:1.5rem;margin-bottom:1.5rem;position:relative;overflow:hidden;">
+    <div style="position:absolute;top:0;left:0;right:0;height:3px;background:{{ rc }};"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--text3);text-transform:uppercase;margin-bottom:.3rem;">Fingerprint Risk Assessment</div>
+        <div style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:{{ rc }};text-transform:uppercase;">
+          {% if fp.risk_level == 'clean' %}✓ CLEAN{% else %}⚠ {{ fp.risk_level.upper() }}{% endif %}
+        </div>
+        <div style="font-size:.75rem;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:.2rem;">{{ fp.risk_score }}/100 · {{ flags|length }} flag(s) · {{ fp.created_at.strftime('%d %b %Y %H:%M') }} UTC</div>
+      </div>
+    </div>
+    <div style="background:rgba(255,255,255,.04);border-radius:4px;height:6px;overflow:hidden;margin-top:1rem;">
+      <div style="height:100%;background:{{ rc }};width:{{ fp.risk_score }}%;border-radius:4px;"></div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem;">
+    <!-- Device info -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1rem;opacity:.8;">// Device Signals</div>
+      {% for label,value in [
+        ('Hash', fp.fingerprint_hash),
+        ('Platform', fp.platform or '—'),
+        ('Resolution', fp.screen_resolution or '—'),
+        ('Color Depth', (fp.color_depth|string + '-bit') if fp.color_depth else '—'),
+        ('Timezone', fp.timezone or '—'),
+        ('Language', fp.language or '—'),
+        ('Plugins', fp.plugins_count|string if fp.plugins_count is not none else '—'),
+        ('Fonts', fp.fonts_count|string if fp.fonts_count is not none else '—'),
+        ('Touch', 'Yes' if fp.touch_support else 'No'),
+        ('WebDriver', '⚠ YES' if fp.webdriver else 'No'),
+        ('WebGL Vendor', fp.webgl_vendor or '—'),
+        ('Canvas Hash', fp.canvas_hash or 'blocked'),
+      ] %}
+      <div style="display:flex;justify-content:space-between;padding:.45rem 0;border-bottom:1px solid rgba(255,255,255,.04);">
+        <span style="font-size:.72rem;color:var(--text3);font-family:'JetBrains Mono',monospace;">{{ label }}</span>
+        <span style="font-size:.75rem;color:var(--text1);font-weight:600;text-align:right;max-width:200px;overflow:hidden;text-overflow:ellipsis;">{{ value }}</span>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Network info -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1rem;opacity:.8;">// Network & Session</div>
+      {% for label,value in [
+        ('IP Address', fp.ip_address or '—'),
+        ('Country', fp.ip_country or '—'),
+        ('ASN', fp.ip_asn or '—'),
+        ('User Agent', (fp.user_agent[:60] + '…') if fp.user_agent and fp.user_agent|length > 60 else (fp.user_agent or '—')),
+      ] %}
+      <div style="display:flex;justify-content:space-between;padding:.45rem 0;border-bottom:1px solid rgba(255,255,255,.04);">
+        <span style="font-size:.72rem;color:var(--text3);font-family:'JetBrains Mono',monospace;">{{ label }}</span>
+        <span style="font-size:.72rem;color:var(--text1);font-weight:500;text-align:right;max-width:200px;overflow:hidden;text-overflow:ellipsis;">{{ value }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Flags -->
+  {% if flags %}
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1.25rem;opacity:.8;">// Fraud Signals ({{ flags|length }})</div>
+    <div style="display:flex;flex-direction:column;gap:.75rem;">
+      {% for flag in flags %}
+      {% set fc = {'critical':'#ef4444','high':'#f97316','medium':'#f59e0b','low':'#3b82f6'}.get(flag.get('severity','low'),'#6b7280') %}
+      <div style="padding:1rem;background:var(--panel);border-radius:8px;border-left:3px solid {{ fc }};display:flex;align-items:center;justify-content:space-between;gap:1rem;">
+        <div>
+          <div style="font-size:.8rem;font-weight:700;color:var(--text1);font-family:'JetBrains Mono',monospace;margin-bottom:.2rem;">{{ flag.get('signal','').replace('_',' ').title() }}</div>
+          <div style="font-size:.72rem;color:var(--text3);">{{ flag.get('detail','') }}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <span style="font-size:.65rem;font-weight:700;padding:.2rem .5rem;border-radius:4px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;color:{{ fc }};border:1px solid {{ fc }}33;background:{{ fc }}11;">{{ flag.get('severity','').upper() }}</span>
+          <div style="font-size:.72rem;color:{{ fc }};font-family:'JetBrains Mono',monospace;font-weight:700;margin-top:.2rem;">+{{ flag.get('score',0) }} pts</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

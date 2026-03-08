@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Add Transaction — DefenceIQ{% endblock %}
+{% block content %}
+<div style="max-width:800px;margin:0 auto;padding:2rem;">
+  <div style="margin-bottom:2rem;">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.15em;margin-bottom:.4rem;opacity:.7;">// AML Monitoring</div>
+    <h1 style="font-family:'Syne',sans-serif;font-size:1.75rem;font-weight:800;letter-spacing:-.02em;">Add Transaction</h1>
+    <p style="font-size:.85rem;color:var(--text2);margin-top:.35rem;font-weight:300;">Transaction will be auto-screened against 10 AML rules immediately on submission.</p>
+  </div>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% for cat,msg in messages %}
+  <div style="padding:.75rem 1rem;border-radius:8px;margin-bottom:1rem;font-size:.82rem;font-family:'JetBrains Mono',monospace;
+    {% if cat=='error' %}background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#ef4444;
+    {% else %}background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:#10b981;{% endif %}">
+    {{ msg }}
+  </div>
+  {% endfor %}
+  {% endwith %}
+
+  <form method="POST" action="{{ url_for('aml_add') }}">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+
+      <!-- Transaction details -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;grid-column:1/-1;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1.25rem;opacity:.8;">// Transaction Details</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;">
+          {% for name,label,placeholder,req in [
+            ('txn_ref','Reference','TXN-2024-001',1),
+            ('txn_date','Date','',1),
+            ('txn_type','Type','',0),
+          ] %}
+          <div>
+            <label style="display:block;font-size:.72rem;font-weight:600;color:var(--text2);margin-bottom:.4rem;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.05em;">{{ label }}{% if req %} *{% endif %}</label>
+            {% if name == 'txn_date' %}
+            <input type="date" name="{{ name }}" required style="width:100%;background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:.6rem .75rem;color:var(--text1);font-size:.82rem;font-family:'JetBrains Mono',monospace;box-sizing:border-box;">
+            {% elif name == 'txn_type' %}
+            <select name="{{ name }}" style="width:100%;background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:.6rem .75rem;color:var(--text1);font-size:.82rem;font-family:'JetBrains Mono',monospace;">
+              <option value="">Select type…</option>
+              {% for opt in ['Bank Transfer','Wire Transfer','Cash','Crypto','CHAPS','BACS','Faster Payments','SWIFT','Hawala','Money Order','Card Payment','Other'] %}
+              <option value="{{ opt.lower() }}">{{ opt }}</option>
+              {% endfor %}
+            </select>
+            {% else %}
+            <input type="text" name="{{ name }}" {% if req %}required{% endif %} placeholder="{{ placeholder }}" style="width:100%;background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:.6rem .75rem;color:var(--text1);font-size:.82rem;font-family:'JetBrains Mono',monospace;box-sizing:border-box;">
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-top:1rem;">
+          <div>
+            <label style="display:block;font-size:.72rem;font-weight:600;color:var(--text2);margin-bottom:.4rem;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.05em;">Amount *</label>
+            <input type="number" name="amount" required step="0.01" min="0" placeholder="0.00" style="width:100%;background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:.6rem .75rem;color:var(--text1);font-size:.82rem;font-family:'JetBrains Mono',monospace;box-sizing:border-box;">
+          </div>
+          <div>
+            <label style="display:block;font-size:.72rem;font-weight:600;color:var(--text2);margin-bottom:.4rem;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.05em;">Currency</label>
+            <select name="currency" style="width:100%;background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:.6rem .75rem;color:var(--text1);font-size:.82rem;font-family:'JetBrains Mono',monospace;">
+              {% for c in ['GBP','USD','EUR','NGN','AED','CHF','JPY','CNY','RUB','BTC'] %}
+              <option value="{{ c }}" {% if c=='GBP' %}selected{% endif %}>{{ c }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label style="display:block;font-size:.72rem;font-weight:600;color:var(--text2);margin-bottom:.4rem;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.05em;">Amount (GBP equiv)</label>
+            <input type="number" name="amount_gbp" step="0.01" min="0" placeholder="Leave blank if GBP" style="width:100%;background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:.6rem .75rem;color:var(--text1);font-size:.82rem;font-family:'JetBrains Mono',monospace;box-sizing:border-box;">
+          </div>
+        </div>
+        <div style="margin-top:1rem;">
+          <label style="display:block;font-size:.72rem;font-weight:600;color:var(--text2);margin-bottom:.4rem;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.05em;">Description / Narrative</label>
+          <textarea name="description" rows="2" placeholder="Purpose of transaction…" style="width:100%;background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:.6rem .75rem;color:var(--text1);font-size:.82rem;font-family:'JetBrains Mono',monospace;box-sizing:border-box;resize:vertical;"></textarea>
+        </div>
+      </div>
+
+      <!-- Sender -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1.25rem;opacity:.8;">// Sender</div>
+        {% for name,label,placeholder in [('sender_name','Full Name','John Smith'),('sender_account','Account / IBAN','GB12BARC...'),('sender_country','Country','United Kingdom')] %}
+        <div style="margin-bottom:.875rem;">
+          <label style="display:block;font-size:.72rem;font-weight:600;color:var(--text2);margin-bottom:.4rem;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.05em;">{{ label }}</label>
+          <input type="text" name="{{ name }}" placeholder="{{ placeholder }}" style="width:100%;background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:.6rem .75rem;color:var(--text1);font-size:.82rem;font-family:'JetBrains Mono',monospace;box-sizing:border-box;">
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Receiver -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1.25rem;opacity:.8;">// Receiver</div>
+        {% for name,label,placeholder in [('receiver_name','Full Name','Jane Doe'),('receiver_account','Account / IBAN','DE89370...'),('receiver_country','Country','Germany')] %}
+        <div style="margin-bottom:.875rem;">
+          <label style="display:block;font-size:.72rem;font-weight:600;color:var(--text2);margin-bottom:.4rem;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.05em;">{{ label }}</label>
+          <input type="text" name="{{ name }}" placeholder="{{ placeholder }}" style="width:100%;background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:.6rem .75rem;color:var(--text1);font-size:.82rem;font-family:'JetBrains Mono',monospace;box-sizing:border-box;">
+        </div>
+        {% endfor %}
+      </div>
+
+    </div>
+
+    <div style="display:flex;gap:1rem;margin-top:1.5rem;">
+      <button type="submit" style="flex:1;background:linear-gradient(135deg,#0f3460,#16213e);border:1px solid var(--cyan);border-radius:8px;padding:.75rem;color:var(--cyan);font-family:'JetBrains Mono',monospace;font-size:.82rem;font-weight:700;letter-spacing:.08em;cursor:pointer;" onmouseover="this.style.background='rgba(0,212,255,.1)'" onmouseout="this.style.background='linear-gradient(135deg,#0f3460,#16213e)'">
+        ⟳ SUBMIT & SCREEN
+      </button>
+      <a href="{{ url_for('aml') }}" style="padding:.75rem 1.5rem;border:1px solid var(--border);border-radius:8px;color:var(--text3);font-family:'JetBrains Mono',monospace;font-size:.78rem;text-decoration:none;display:flex;align-items:center;">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

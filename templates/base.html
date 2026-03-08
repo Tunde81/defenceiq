@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}DefenceIQ{% endblock %} — Threat Intelligence Platform</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root{
+            --bg-base:#070d1a;
+            --bg-panel:#0c1526;
+            --bg-card:#111e33;
+            --bg-card-hover:#152240;
+            --bg-input:#0a1020;
+            --border:#1e3354;
+            --border-bright:#2a4a7f;
+            --cyan:#00d4ff;
+            --cyan-dim:#0099cc;
+            --cyan-glow:rgba(0,212,255,0.15);
+            --cyan-glow-strong:rgba(0,212,255,0.25);
+            --green:#00ff88;
+            --green-dim:#00cc6a;
+            --red:#ff3b5c;
+            --red-dim:#cc2244;
+            --amber:#f59e0b;
+            --amber-dim:#d97706;
+            --purple:#a855f7;
+            --text-primary:#e2eeff;
+            --text-secondary:#7a9cc4;
+            --text-muted:#3d5a80;
+            --white:#ffffff;
+        }
+        *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+        html{scroll-behavior:smooth}
+        body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg-base);color:var(--text-primary);line-height:1.6;overflow-x:hidden;min-height:100vh}
+
+        /* SCANLINE EFFECT */
+        body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,212,255,0.015) 2px,rgba(0,212,255,0.015) 4px);pointer-events:none;z-index:0}
+
+        /* SIDEBAR */
+        .sidebar{position:fixed;top:0;left:0;width:240px;height:100vh;background:var(--bg-panel);z-index:100;display:flex;flex-direction:column;border-right:1px solid var(--border)}
+        .sidebar::after{content:'';position:absolute;top:0;right:0;width:1px;height:100%;background:linear-gradient(180deg,transparent,var(--cyan-dim),transparent);opacity:.4}
+
+        .sidebar-logo{padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.75rem}
+        .sidebar-logo-icon{width:34px;height:34px;background:linear-gradient(135deg,var(--cyan-dim),#0066aa);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0;box-shadow:0 0 12px var(--cyan-glow)}
+        .sidebar-logo-text{font-size:1.1rem;font-weight:700;color:var(--white);letter-spacing:.02em;font-family:'Plus Jakarta Sans',sans-serif}
+        .sidebar-logo-text span{color:var(--cyan);text-shadow:0 0 8px var(--cyan-glow-strong)}
+
+        .sidebar-org{padding:.75rem 1.5rem;border-bottom:1px solid var(--border)}
+        .sidebar-org-name{font-size:.78rem;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .sidebar-org-plan{font-size:.65rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;font-family:'JetBrains Mono',monospace}
+
+        .sidebar-nav{flex:1;padding:.75rem 0;overflow-y:auto}
+        .sidebar-nav::-webkit-scrollbar{width:3px}
+        .sidebar-nav::-webkit-scrollbar-track{background:transparent}
+        .sidebar-nav::-webkit-scrollbar-thumb{background:var(--border-bright);border-radius:2px}
+
+        .nav-section{padding:.5rem 1.5rem .2rem;font-size:.6rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.15em;font-family:'JetBrains Mono',monospace;margin-top:.5rem}
+        .nav-item{display:flex;align-items:center;gap:.75rem;padding:.55rem 1.5rem;font-size:.82rem;font-weight:500;color:var(--text-secondary);text-decoration:none;transition:all .15s;border-left:2px solid transparent;position:relative}
+        .nav-item:hover{background:rgba(0,212,255,.05);color:var(--text-primary);border-left-color:var(--border-bright)}
+        .nav-item.active{background:rgba(0,212,255,.08);color:var(--cyan);border-left-color:var(--cyan);text-shadow:0 0 8px var(--cyan-glow)}
+        .nav-item.active::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--cyan);box-shadow:0 0 8px var(--cyan)}
+        .nav-item-icon{font-size:.9rem;width:18px;text-align:center;flex-shrink:0}
+        .nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:.58rem;font-weight:700;padding:.1rem .4rem;border-radius:3px;font-family:'JetBrains Mono',monospace}
+
+        .sidebar-footer{padding:1rem 1.5rem;border-top:1px solid var(--border)}
+        .sidebar-user{display:flex;align-items:center;gap:.6rem}
+        .user-avatar{width:30px;height:30px;background:linear-gradient(135deg,var(--cyan-dim),#004477);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:var(--white);flex-shrink:0;border:1px solid var(--border-bright)}
+        .user-info{flex:1;min-width:0}
+        .user-name{font-size:.78rem;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .user-role{font-size:.65rem;color:var(--cyan);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.05em}
+
+        /* MAIN */
+        .main{margin-left:240px;min-height:100vh;display:flex;flex-direction:column;position:relative;z-index:1}
+
+        .topbar{background:var(--bg-panel);border-bottom:1px solid var(--border);padding:.875rem 2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;backdrop-filter:blur(10px)}
+        .topbar-title{font-size:.875rem;font-weight:600;color:var(--text-primary);font-family:'JetBrains Mono',monospace;letter-spacing:.05em}
+        .topbar-title::before{content:'> ';color:var(--cyan)}
+        .topbar-right{display:flex;align-items:center;gap:1rem}
+        .topbar-status{display:flex;align-items:center;gap:.4rem;font-size:.72rem;color:var(--green);font-family:'JetBrains Mono',monospace}
+        .topbar-status::before{content:'';width:6px;height:6px;background:var(--green);border-radius:50%;box-shadow:0 0 6px var(--green);animation:pulse 2s infinite}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+        .content{padding:1.75rem 2rem;flex:1}
+
+        /* CARDS */
+        .card{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:1.5rem;position:relative;overflow:hidden}
+        .card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--cyan-dim),transparent);opacity:.4}
+        .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;padding-bottom:.875rem;border-bottom:1px solid var(--border)}
+        .card-title{font-size:.82rem;font-weight:600;color:var(--text-primary);text-transform:uppercase;letter-spacing:.08em;font-family:'JetBrains Mono',monospace}
+
+        /* STATS */
+        .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem}
+        .stat-card{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:1.25rem;display:flex;align-items:center;gap:1rem;position:relative;overflow:hidden;transition:border-color .2s}
+        .stat-card:hover{border-color:var(--border-bright)}
+        .stat-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;opacity:.6}
+        .stat-card.cyan::after{background:var(--cyan)}
+        .stat-card.red::after{background:var(--red)}
+        .stat-card.green::after{background:var(--green)}
+        .stat-card.amber::after{background:var(--amber)}
+        .stat-card.purple::after{background:var(--purple)}
+        .stat-icon{width:42px;height:42px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;border:1px solid var(--border)}
+        .stat-icon.cyan{background:rgba(0,212,255,.1);border-color:rgba(0,212,255,.2)}
+        .stat-icon.red{background:rgba(255,59,92,.1);border-color:rgba(255,59,92,.2)}
+        .stat-icon.green{background:rgba(0,255,136,.1);border-color:rgba(0,255,136,.2)}
+        .stat-icon.amber{background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.2)}
+        .stat-icon.purple{background:rgba(168,85,247,.1);border-color:rgba(168,85,247,.2)}
+        .stat-val{font-size:1.75rem;font-weight:700;color:var(--white);line-height:1;font-family:'JetBrains Mono',monospace}
+        .stat-lbl{font-size:.7rem;color:var(--text-secondary);margin-top:.2rem;text-transform:uppercase;letter-spacing:.08em}
+
+        /* BUTTONS */
+        .btn{display:inline-flex;align-items:center;gap:.4rem;padding:.5rem 1.1rem;border-radius:6px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.82rem;font-weight:600;cursor:pointer;border:none;text-decoration:none;transition:all .15s;white-space:nowrap;letter-spacing:.02em}
+        .btn-primary{background:linear-gradient(135deg,var(--cyan-dim),#005588);color:var(--white);border:1px solid var(--cyan-dim);box-shadow:0 0 12px rgba(0,153,204,.3)}
+        .btn-primary:hover{box-shadow:0 0 20px rgba(0,212,255,.4);transform:translateY(-1px);border-color:var(--cyan)}
+        .btn-secondary{background:transparent;color:var(--text-secondary);border:1px solid var(--border)}
+        .btn-secondary:hover{border-color:var(--border-bright);color:var(--text-primary);background:rgba(255,255,255,.03)}
+        .btn-danger{background:rgba(255,59,92,.1);color:var(--red);border:1px solid rgba(255,59,92,.3)}
+        .btn-danger:hover{background:rgba(255,59,92,.2)}
+        .btn-success{background:rgba(0,255,136,.1);color:var(--green);border:1px solid rgba(0,255,136,.3)}
+        .btn-sm{padding:.3rem .75rem;font-size:.75rem}
+
+        /* BADGES */
+        .badge{display:inline-flex;align-items:center;gap:.3rem;font-size:.68rem;font-weight:700;padding:.2rem .55rem;border-radius:4px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.05em}
+        .badge-critical{background:rgba(255,59,92,.15);color:#ff6b85;border:1px solid rgba(255,59,92,.3)}
+        .badge-high{background:rgba(245,158,11,.15);color:#fbbf24;border:1px solid rgba(245,158,11,.3)}
+        .badge-medium{background:rgba(0,212,255,.15);color:var(--cyan);border:1px solid rgba(0,212,255,.3)}
+        .badge-low{background:rgba(0,255,136,.15);color:#4ade80;border:1px solid rgba(0,255,136,.3)}
+        .badge-open{background:rgba(0,212,255,.1);color:var(--cyan);border:1px solid rgba(0,212,255,.25)}
+        .badge-investigating{background:rgba(168,85,247,.15);color:#c084fc;border:1px solid rgba(168,85,247,.3)}
+        .badge-resolved{background:rgba(0,255,136,.1);color:var(--green);border:1px solid rgba(0,255,136,.25)}
+        .badge-false-positive{background:rgba(255,255,255,.05);color:var(--text-muted);border:1px solid var(--border)}
+        .badge-clean{background:rgba(0,255,136,.1);color:var(--green);border:1px solid rgba(0,255,136,.25)}
+        .badge-unknown{background:rgba(255,255,255,.05);color:var(--text-muted);border:1px solid var(--border)}
+
+        /* TABLE */
+        .table-wrap{overflow-x:auto}
+        table{width:100%;border-collapse:collapse}
+        thead th{padding:.65rem 1rem;font-size:.68rem;font-weight:600;color:var(--text-muted);text-align:left;background:rgba(0,0,0,.2);border-bottom:1px solid var(--border);white-space:nowrap;text-transform:uppercase;letter-spacing:.1em;font-family:'JetBrains Mono',monospace}
+        tbody td{padding:.8rem 1rem;font-size:.82rem;color:var(--text-secondary);border-bottom:1px solid rgba(30,51,84,.5)}
+        tbody tr:hover{background:rgba(0,212,255,.03)}
+        tbody tr:last-child td{border-bottom:none}
+
+        /* FORMS */
+        .form-group{margin-bottom:1.1rem}
+        .form-label{display:block;font-size:.72rem;font-weight:600;color:var(--text-secondary);margin-bottom:.4rem;text-transform:uppercase;letter-spacing:.08em;font-family:'JetBrains Mono',monospace}
+        .form-control{width:100%;padding:.6rem .875rem;border:1px solid var(--border);border-radius:6px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.855rem;color:var(--text-primary);background:var(--bg-input);transition:border-color .15s,box-shadow .15s}
+        .form-control:focus{outline:none;border-color:var(--cyan-dim);box-shadow:0 0 0 3px rgba(0,212,255,.08)}
+        .form-control::placeholder{color:var(--text-muted)}
+        select.form-control option{background:var(--bg-panel);color:var(--text-primary)}
+        textarea.form-control{resize:vertical;min-height:100px}
+        .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+
+        /* ALERTS */
+        .alert{padding:.75rem 1rem;border-radius:8px;font-size:.84rem;margin-bottom:1rem;display:flex;align-items:flex-start;gap:.6rem;border:1px solid}
+        .alert-success{background:rgba(0,255,136,.08);border-color:rgba(0,255,136,.25);color:#4ade80}
+        .alert-error{background:rgba(255,59,92,.08);border-color:rgba(255,59,92,.25);color:#ff6b85}
+        .alert-warning{background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.25);color:#fbbf24}
+        .alert-info{background:rgba(0,212,255,.08);border-color:rgba(0,212,255,.25);color:var(--cyan)}
+
+        /* PLAN BADGE */
+        .plan-pill{display:inline-block;font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;padding:.2rem .55rem;border-radius:4px;font-family:'JetBrains Mono',monospace}
+        .plan-free{background:rgba(255,255,255,.05);color:var(--text-muted);border:1px solid var(--border)}
+        .plan-professional{background:rgba(0,212,255,.1);color:var(--cyan);border:1px solid rgba(0,212,255,.3)}
+        .plan-enterprise{background:rgba(168,85,247,.1);color:#c084fc;border:1px solid rgba(168,85,247,.3)}
+
+        /* MONO DATA */
+        .mono{font-family:'JetBrains Mono',monospace}
+        .text-cyan{color:var(--cyan)}
+        .text-green{color:var(--green)}
+        .text-red{color:var(--red)}
+        .text-amber{color:var(--amber)}
+        .text-muted{color:var(--text-muted)}
+
+        /* GLOW DIVIDER */
+        .glow-divider{height:1px;background:linear-gradient(90deg,transparent,var(--cyan-dim),transparent);margin:1.25rem 0;opacity:.4}
+
+        @media(max-width:900px){.sidebar{transform:translateX(-100%)}.main{margin-left:0}.stats-grid{grid-template-columns:repeat(2,1fr)}}
+    </style>
+    {% block head %}{% endblock %}
+</head>
+<body>
+{% if current_user.is_authenticated %}
+<div class="sidebar">
+    <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">🛡️</div>
+        <div class="sidebar-logo-text">Defence<span>IQ</span></div>
+    </div>
+    <div class="sidebar-org">
+        <div class="sidebar-org-name">{{ current_user.organisation.name }}</div>
+        <div class="sidebar-org-plan">{{ current_user.organisation.plan }} // active</div>
+    </div>
+    <nav class="sidebar-nav">
+        <div class="nav-section">// Overview</div>
+        <a href="{{ url_for('dashboard') }}" class="nav-item {% if request.endpoint == 'dashboard' %}active{% endif %}">
+            <span class="nav-item-icon">▦</span> Dashboard
+        </a>
+        <div class="nav-section">// Intelligence</div>
+        <a href="{{ url_for('cases') }}" class="nav-item {% if 'case' in request.endpoint %}active{% endif %}">
+            <span class="nav-item-icon">◈</span> Fraud Cases
+        </a>
+        <a href="{{ url_for('new_case') }}" class="nav-item {% if request.endpoint == 'new_case' %}active{% endif %}">
+            <span class="nav-item-icon">⊕</span> Submit Case
+        </a>
+        <a href="{{ url_for('behavioural') }}" class="nav-item {% if 'behavioural' in request.endpoint %}active{% endif %}">
+            <span class="nav-item-icon">◎</span> Behavioural
+        </a>
+        <a href="{{ url_for('phishing') }}" class="nav-item {% if 'phishing' in request.endpoint %}active{% endif %}">
+            <span class="nav-item-icon">🎣</span> Phishing
+        </a>
+        <a href="{{ url_for('ip_reputation') }}" class="nav-item {% if 'ip_reputation' in request.endpoint %}active{% endif %}">
+            <span class="nav-item-icon">◉</span> IP Reputation
+        </a>
+        <a href="{{ url_for('dark_web') }}" class="nav-item {% if 'dark_web' in request.endpoint %}active{% endif %}">
+            <span class="nav-item-icon">⬡</span> Dark Web
+        </a>
+        <a href="{{ url_for('case_duplicates') }}" class="nav-item {% if request.endpoint == 'case_duplicates' %}active{% endif %}">
+            <span class="nav-item-icon">⊜</span> Duplicates
+            {# Show badge if there are any duplicate groups #}
+        </a>
+        <a href="{{ url_for('threat_intel') }}" class="nav-item {% if 'threat' in request.endpoint or 'scan' in request.endpoint %}active{% endif %}">
+            <span class="nav-item-icon">◎</span> Threat Intel
+        </a>
+        <div class="nav-section">// Compliance</div>
+        <a href="/network" class="nav-item {% if 'network' in request.endpoint %}active{% endif %}">
+            <span class="nav-item-icon">🔗</span> Network
+        </a>
+        <a href="/adverse-media" class="nav-item {% if 'adverse_media' in request.endpoint %}active{% endif %}">
+            <span class="nav-item-icon">📰</span> Adverse Media
+        </a>
+        <a href="/device-fingerprints" class="nav-item {% if 'device_fingerprint' in request.endpoint %}active{% endif %}">
+            <span class="nav-item-icon">🔬</span> Devices
+        </a>
+        <a href="{{ url_for('kyc') }}" class="nav-item {% if 'kyc' in request.endpoint %}active{% endif %}">
+            <span class="nav-item-icon">◈</span> KYC
+        </a>
+        <a href="{{ url_for('aml') }}" class="nav-item {% if 'aml' in request.endpoint %}active{% endif %}">
+            <span class="nav-item-icon">⟳</span> AML Monitor
+        </a>
+        <a href="{{ url_for('sanctions') }}" class="nav-item {% if 'sanctions' in request.endpoint %}active{% endif %}">
+            <span class="nav-item-icon">⚖</span> Sanctions
+        </a>
+        <a href="{{ url_for('reports') }}" class="nav-item {% if request.endpoint == 'reports' %}active{% endif %}">
+            <span class="nav-item-icon">≡</span> Reports
+        </a>
+        <div class="nav-section">// Training</div>
+        <a href="{{ url_for('training') }}" class="nav-item {% if 'training' in request.endpoint %}active{% endif %}">
+            <span class="nav-item-icon">◷</span> Modules
+        </a>
+        <div class="nav-section">// Config</div>
+        <a href="{{ url_for('team_settings') }}" class="nav-item {% if request.endpoint == 'team_settings' %}active{% endif %}">
+            <span class="nav-item-icon">⊞</span> Team
+        </a>
+        <a href="{{ url_for('webhook_settings') }}" class="nav-item {% if request.endpoint == 'webhook_settings' %}active{% endif %}">
+            <span class="nav-item-icon">⊛</span> Webhooks
+        </a>
+        <a href="{{ url_for('api_settings') }}" class="nav-item {% if request.endpoint == 'api_settings' %}active{% endif %}">
+            <span class="nav-item-icon">⌥</span> API Keys
+        </a>
+        <a href="{{ url_for('billing') }}" class="nav-item {% if request.endpoint == 'billing' %}active{% endif %}">
+            <span class="nav-item-icon">◬</span> Billing
+            {% if current_user.organisation.plan == 'free' %}<span class="nav-badge">↑</span>{% endif %}
+        </a>
+    </nav>
+    <div class="sidebar-footer">
+        <div class="sidebar-user">
+            <div class="user-avatar">{{ current_user.full_name[0].upper() if current_user.full_name else 'U' }}</div>
+            <div class="user-info">
+                <div class="user-name">{{ current_user.full_name or current_user.email }}</div>
+                <div class="user-role">{{ current_user.role }}</div>
+            </div>
+            <a href="{{ url_for('logout') }}" style="color:var(--text-muted);font-size:.85rem;text-decoration:none;margin-left:.5rem;transition:color .15s" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--text-muted)'" title="Logout">⏻</a>
+        </div>
+    </div>
+</div>
+<div class="main">
+    <div class="topbar">
+        <div class="topbar-title">{% block page_title %}{% endblock %}</div>
+        <div class="topbar-right">
+            <div class="topbar-status">SYSTEM ONLINE</div>
+            <span class="plan-pill plan-{{ current_user.organisation.plan }}">{{ current_user.organisation.plan }}</span>
+            <a href="{{ url_for('new_case') }}" class="btn btn-primary btn-sm">⊕ New Case</a>
+        </div>
+    </div>
+    <div class="content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ 'error' if category == 'error' else category }}">
+                {{ '✓' if category == 'success' else '⚠' }} {{ message }}
+            </div>
+            {% endfor %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </div>
+</div>
+{% else %}
+{% block public_content %}{% endblock %}
+{% endif %}
+
+<!-- Device Fingerprint Collector -->
+{% if current_user.is_authenticated %}
+<script>
+(function() {
+  try {
+    var fp = {};
+    fp.screen_resolution = screen.width + 'x' + screen.height;
+    fp.color_depth = screen.colorDepth;
+    fp.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    fp.platform = navigator.platform;
+    fp.language = navigator.language;
+    fp.plugins_count = navigator.plugins ? navigator.plugins.length : 0;
+    fp.touch_support = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+    fp.webdriver = navigator.webdriver || false;
+
+    // WebGL vendor
+    try {
+      var gl = document.createElement('canvas').getContext('webgl');
+      var dbg = gl ? gl.getExtension('WEBGL_debug_renderer_info') : null;
+      fp.webgl_vendor = dbg ? gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL) : '';
+    } catch(e) { fp.webgl_vendor = ''; }
+
+    // Canvas hash
+    try {
+      var c = document.createElement('canvas');
+      c.width = 200; c.height = 50;
+      var ctx = c.getContext('2d');
+      ctx.fillStyle = '#f60'; ctx.fillRect(0, 0, 200, 50);
+      ctx.fillStyle = '#069'; ctx.font = '14px Arial';
+      ctx.fillText('DefenceIQ🔬', 10, 30);
+      ctx.strokeStyle = '#0f0'; ctx.arc(50, 25, 20, 0, Math.PI*2);
+      ctx.stroke();
+      fp.canvas_hash = c.toDataURL().slice(-32);
+    } catch(e) { fp.canvas_hash = 'blocked'; }
+
+    // Fonts count (basic probe)
+    try {
+      var fonts = ['Arial','Times New Roman','Courier New','Georgia','Verdana',
+                   'Tahoma','Impact','Comic Sans MS','Trebuchet MS','Arial Black',
+                   'Palatino','Garamond','Bookman','Helvetica','Century Gothic'];
+      var base = document.createElement('span');
+      base.style.cssText = 'position:absolute;left:-9999px;font-size:72px;font-family:monospace';
+      base.textContent = 'mmmmmmmmmmlli';
+      document.body.appendChild(base);
+      var baseW = base.offsetWidth;
+      var count = 0;
+      fonts.forEach(function(font) {
+        base.style.fontFamily = font + ',monospace';
+        if (base.offsetWidth !== baseW) count++;
+      });
+      document.body.removeChild(base);
+      fp.fonts_count = count;
+    } catch(e) { fp.fonts_count = -1; }
+
+    // Send to backend (non-blocking, best-effort)
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/fingerprint', true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.setRequestHeader('X-CSRFToken', document.querySelector('meta[name=csrf-token]') ?
+      document.querySelector('meta[name=csrf-token]').content : '');
+    xhr.send(JSON.stringify(fp));
+  } catch(e) {}
+})();
+</script>
+{% endif %}
+</body>
+</html>

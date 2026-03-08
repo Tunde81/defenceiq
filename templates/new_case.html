@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% block title %}Submit Case{% endblock %}
+{% block page_title %}Submit Fraud Case{% endblock %}
+{% block content %}
+<div style="max-width:720px">
+<div class="card">
+    <div class="card-header">
+        <span class="card-title">New Fraud Case</span>
+        <span style="font-size:.72rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace">* required fields</span>
+    </div>
+    <form method="POST">
+        <div style="margin-bottom:1.25rem;padding-bottom:1.25rem;border-bottom:1px solid var(--border)">
+            <div style="font-size:.68rem;font-weight:600;color:var(--cyan);text-transform:uppercase;letter-spacing:.12em;font-family:'JetBrains Mono',monospace;margin-bottom:.875rem">// Fraud Indicator</div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">Indicator Type *</label>
+                    <select name="indicator_type" class="form-control" required>
+                        <option value="">Select type</option>
+                        <option value="account">Bank Account Number</option>
+                        <option value="bvn">BVN</option>
+                        <option value="phone">Phone Number</option>
+                        <option value="email">Email Address</option>
+                        <option value="ip">IP Address</option>
+                        <option value="card">Card Number</option>
+                        <option value="device">Device ID</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Indicator Value *</label>
+                    <input type="text" name="indicator_value" class="form-control" placeholder="e.g. 0801234567" required>
+                </div>
+            </div>
+        </div>
+        <div style="margin-bottom:1.25rem;padding-bottom:1.25rem;border-bottom:1px solid var(--border)">
+            <div style="font-size:.68rem;font-weight:600;color:var(--cyan);text-transform:uppercase;letter-spacing:.12em;font-family:'JetBrains Mono',monospace;margin-bottom:.875rem">// Case Details</div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">Fraud Type *</label>
+                    <select name="fraud_type" class="form-control" required>
+                        <option value="">Select fraud type</option>
+                        <option value="Account Takeover">Account Takeover</option>
+                        <option value="BVN Fraud">BVN Fraud</option>
+                        <option value="Phishing">Phishing</option>
+                        <option value="SIM Swap">SIM Swap</option>
+                        <option value="Card Fraud">Card Fraud</option>
+                        <option value="Identity Theft">Identity Theft</option>
+                        <option value="Money Mule">Money Mule</option>
+                        <option value="Romance Scam">Romance Scam</option>
+                        <option value="Business Email Compromise">Business Email Compromise</option>
+                        <option value="Investment Fraud">Investment Fraud</option>
+                        <option value="Loan Fraud">Loan Fraud</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Severity *</label>
+                    <select name="severity" class="form-control" required>
+                        <option value="low">Low</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="high">High</option>
+                        <option value="critical">Critical</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Description</label>
+                <textarea name="description" class="form-control" placeholder="Describe the fraud incident, detection method, additional context..."></textarea>
+            </div>
+        </div>
+        <div style="margin-bottom:1.25rem">
+            <div style="font-size:.68rem;font-weight:600;color:var(--cyan);text-transform:uppercase;letter-spacing:.12em;font-family:'JetBrains Mono',monospace;margin-bottom:.875rem">// Financial Impact (Optional)</div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">Amount Lost</label>
+                    <input type="number" name="amount_lost" class="form-control" placeholder="0.00" step="0.01" min="0">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Currency</label>
+                    <select name="currency" class="form-control">
+                        <option value="NGN">NGN — Nigerian Naira</option>
+                        <option value="GHS">GHS — Ghanaian Cedi</option>
+                        <option value="KES">KES — Kenyan Shilling</option>
+                        <option value="ZAR">ZAR — South African Rand</option>
+                        <option value="USD">USD — US Dollar</option>
+                        <option value="GBP">GBP — British Pound</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        {% if org.plan in ['professional', 'enterprise'] %}
+        <div style="background:rgba(0,212,255,.06);border:1px solid rgba(0,212,255,.2);border-radius:8px;padding:.875rem 1rem;margin-bottom:1.25rem;font-size:.82rem;color:var(--cyan);font-family:'JetBrains Mono',monospace">
+            ◎ AI RISK SCORING ENABLED — This case will be automatically scored by Claude AI on submission.
+        </div>
+        {% else %}
+        <div style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;padding:.875rem 1rem;margin-bottom:1.25rem;font-size:.82rem;color:var(--text-muted)">
+            ◎ AI Risk Scoring available on <a href="{{ url_for('billing') }}" style="color:var(--cyan)">Professional plan</a>.
+        </div>
+        {% endif %}
+        <div style="display:flex;gap:.75rem">
+            <button type="submit" class="btn btn-primary">⊕ Submit Case →</button>
+            <a href="{{ url_for('cases') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    
+  {# ── Duplicate Indicator Warning ── #}
+  {% if duplicates %}
+  <div style="margin-top:1.5rem;background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.3);border-radius:10px;padding:1.25rem 1.5rem;">
+    <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:1rem;">
+      <span style="color:var(--amber);font-size:1rem;">⚠</span>
+      <span style="font-family:'Syne',sans-serif;font-weight:700;color:var(--amber);font-size:.9rem;">
+        Duplicate Indicator Detected — {{ duplicates|length }} existing case{{ 's' if duplicates|length > 1 else '' }}
+      </span>
+    </div>
+    <p style="font-size:.8rem;color:var(--text2);margin-bottom:1rem;font-weight:300;">
+      This indicator has been reported before. Review the cases below before submitting.
+    </p>
+    <div style="display:flex;flex-direction:column;gap:.5rem;margin-bottom:1.25rem;">
+      {% for dc in duplicates %}
+      <a href="{{ url_for('case_detail', case_id=dc.id) }}" target="_blank"
+         style="display:flex;align-items:center;justify-content:space-between;padding:.6rem .875rem;background:var(--card);border:1px solid var(--border);border-radius:7px;text-decoration:none;transition:border-color .2s;"
+         onmouseover="this.style.borderColor='rgba(245,158,11,.4)'" onmouseout="this.style.borderColor='var(--border)'">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--cyan);font-weight:600;">{{ dc.case_ref }}</span>
+        <span style="font-size:.72rem;color:var(--text2);">{{ dc.fraud_type or 'Unknown' }}</span>
+        <span style="font-size:.65rem;padding:.12rem .4rem;border-radius:3px;font-weight:700;font-family:'JetBrains Mono',monospace;
+          {% if dc.severity == 'critical' %}background:rgba(255,59,92,.2);color:#ff7090;
+          {% elif dc.severity == 'high' %}background:rgba(245,158,11,.2);color:#fbbf24;
+          {% elif dc.severity == 'medium' %}background:rgba(0,212,255,.2);color:var(--cyan);
+          {% else %}background:rgba(0,255,136,.2);color:var(--green);{% endif %}">
+          {{ dc.severity|upper }}
+        </span>
+        {% if dc.ai_score %}
+        <span style="font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:700;
+          {% if dc.ai_score >= 75 %}color:var(--red);{% elif dc.ai_score >= 50 %}color:var(--amber);{% else %}color:var(--green);{% endif %}">
+          AI: {{ dc.ai_score|int }}/100
+        </span>
+        {% endif %}
+        <span style="font-size:.65rem;color:var(--text3);font-family:'JetBrains Mono',monospace;">{{ dc.created_at.strftime('%d %b %Y') }}</span>
+        <span style="font-size:.7rem;color:var(--cyan);">↗ View</span>
+      </a>
+      {% endfor %}
+    </div>
+    {% if show_confirm %}
+    <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+      <input type="hidden" name="confirm_duplicate" value="1">
+      <button type="submit"
+        style="padding:.65rem 1.5rem;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.4);border-radius:7px;color:var(--amber);font-family:'Syne',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;transition:all .2s;"
+        onmouseover="this.style.background='rgba(245,158,11,.25)'" onmouseout="this.style.background='rgba(245,158,11,.15)'">
+        ⚠ Submit Anyway (Duplicate)
+      </button>
+      <a href="{{ url_for('new_case') }}"
+         style="padding:.65rem 1.5rem;border:1px solid var(--border);border-radius:7px;color:var(--text2);font-family:'JetBrains Mono',monospace;font-size:.78rem;text-decoration:none;">
+        ← Cancel
+      </a>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</form>
+</div>
+</div>
+{% endblock %}

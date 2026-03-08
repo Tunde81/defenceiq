@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+{% block title %}Behavioural Risk Scoring — DefenceIQ{% endblock %}
+{% block content %}
+<div style="max-width:1100px;margin:0 auto;padding:2rem;">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem;">
+    <div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.15em;margin-bottom:.4rem;opacity:.7;">// Intelligence</div>
+      <h1 style="font-family:'Syne',sans-serif;font-size:1.75rem;font-weight:800;letter-spacing:-.02em;">Behavioural Risk Scoring</h1>
+      <p style="font-size:.85rem;color:var(--text2);margin-top:.35rem;font-weight:300;">Pattern-of-life analysis across case history. Score any entity against 8 behavioural signals — no external APIs.</p>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:300px 1fr;gap:1.5rem;align-items:start;">
+
+    <!-- LEFT -->
+    <div style="display:flex;flex-direction:column;gap:1.25rem;">
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1rem;opacity:.8;">// Score Entity</div>
+        <form method="POST" action="{{ url_for('behavioural_score') }}">
+          <div style="margin-bottom:1rem;">
+            <label style="display:block;font-size:.72rem;font-weight:600;color:var(--text2);margin-bottom:.4rem;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.05em;">Entity Value</label>
+            <input type="text" name="entity_value" required value="{{ last_query or '' }}"
+              style="width:100%;background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:.6rem .75rem;color:var(--text1);font-size:.82rem;font-family:'JetBrains Mono',monospace;box-sizing:border-box;"
+              placeholder="Email, IP, phone, name…">
+            <div style="font-size:.65rem;color:var(--text3);margin-top:.3rem;font-family:'JetBrains Mono',monospace;">Matched against all case history</div>
+          </div>
+          <button type="submit" style="width:100%;background:linear-gradient(135deg,#0f3460,#16213e);border:1px solid var(--cyan);border-radius:8px;padding:.7rem;color:var(--cyan);font-family:'JetBrains Mono',monospace;font-size:.78rem;font-weight:700;letter-spacing:.08em;cursor:pointer;transition:all .2s;" onmouseover="this.style.background='rgba(0,212,255,.1)'" onmouseout="this.style.background='linear-gradient(135deg,#0f3460,#16213e)'">
+            ◎ SCORE ENTITY
+          </button>
+        </form>
+      </div>
+
+      <!-- Signals legend -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1rem;opacity:.8;">// Scoring Signals</div>
+        {% for icon, name, desc in [
+          ('⟳','Case Frequency','Repeat appearances across cases'),
+          ('▲','Severity Pattern','Weighted average case severity'),
+          ('◈','Fraud Type Diversity','Multiple types = organised fraud'),
+          ('◷','Recency','Activity in last 30/90 days'),
+          ('£','Financial Exposure','Total losses attributed'),
+          ('✓','Confirmed Cases','Verified fraud status'),
+          ('⚡','Threat Intel Hits','Dark web / IP / phishing flags'),
+          ('≋','Velocity','Cases per month rate'),
+        ] %}
+        <div style="display:flex;align-items:flex-start;gap:.6rem;padding:.45rem 0;border-bottom:1px solid rgba(255,255,255,.04);">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:.8rem;color:var(--cyan);width:1rem;flex-shrink:0;margin-top:.05rem;">{{ icon }}</span>
+          <div>
+            <div style="font-size:.75rem;font-weight:600;color:var(--text1);">{{ name }}</div>
+            <div style="font-size:.66rem;color:var(--text3);font-family:'JetBrains Mono',monospace;">{{ desc }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div style="display:flex;flex-direction:column;gap:1.25rem;">
+
+      {% if result %}
+      {% set rc = {'critical':'#ef4444','high':'#f97316','medium':'#f59e0b','low':'#3b82f6','clean':'#10b981'}.get(result.overall_risk,'#6b7280') %}
+
+      <!-- Banner -->
+      <div style="background:var(--card);border:1px solid {{ rc }};border-radius:12px;padding:1.5rem;position:relative;overflow:hidden;">
+        <div style="position:absolute;top:0;left:0;right:0;height:3px;background:{{ rc }};"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.25rem;">
+          <div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.3rem;">Behavioural Risk Profile</div>
+            <div style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;color:var(--text1);">{{ result.entity }}</div>
+            <div style="font-size:.72rem;color:var(--text3);margin-top:.25rem;font-family:'JetBrains Mono',monospace;">{{ result.case_count }} case(s) · {{ result.signals|length }} signals evaluated{% if result.total_exposure %} · £{{ '{:,.0f}'.format(result.total_exposure) }} exposure{% endif %}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;color:{{ rc }};text-transform:uppercase;">
+              {% if result.overall_risk == 'clean' %}✓ CLEAN{% else %}⚠ {{ result.overall_risk.upper() }}{% endif %}
+            </div>
+            <div style="font-size:1rem;font-weight:700;color:{{ rc }};font-family:'JetBrains Mono',monospace;">{{ result.risk_score }}/100</div>
+          </div>
+        </div>
+        <!-- Score bar -->
+        <div style="background:rgba(255,255,255,.06);border-radius:4px;height:8px;overflow:hidden;margin-bottom:1rem;">
+          <div style="height:100%;background:linear-gradient(90deg,{{ rc }}99,{{ rc }});width:{{ result.risk_score }}%;transition:width .6s;border-radius:4px;"></div>
+        </div>
+        <div style="font-size:.78rem;color:var(--text2);line-height:1.5;padding:.75rem;background:rgba(255,255,255,.03);border-radius:7px;font-family:'JetBrains Mono',monospace;">
+          {{ result.summary }}
+        </div>
+      </div>
+
+      <!-- Signals breakdown -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1.25rem;opacity:.8;">// Signal Breakdown</div>
+        <div style="display:flex;flex-direction:column;gap:.6rem;">
+          {% for sig in result.signals %}
+          {% set sc = {'critical':'#ef4444','high':'#f97316','medium':'#f59e0b','low':'#3b82f6','clean':'#10b981','info':'#6b7280'}.get(sig.status,'#6b7280') %}
+          <div style="display:flex;align-items:center;gap:1rem;padding:.75rem 1rem;background:var(--panel);border-radius:8px;border-left:3px solid {{ sc }};">
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.2rem;">
+                <span style="font-size:.75rem;font-weight:700;color:var(--text1);">{{ sig.label }}</span>
+                <span style="font-size:.6rem;font-weight:700;padding:.1rem .35rem;border-radius:3px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;
+                  {% if sig.status == 'critical' %}background:rgba(239,68,68,.12);color:#ef4444;border:1px solid rgba(239,68,68,.25);
+                  {% elif sig.status == 'high' %}background:rgba(249,115,22,.12);color:#f97316;border:1px solid rgba(249,115,22,.25);
+                  {% elif sig.status == 'medium' %}background:rgba(245,158,11,.12);color:#f59e0b;border:1px solid rgba(245,158,11,.25);
+                  {% elif sig.status == 'low' %}background:rgba(59,130,246,.12);color:#3b82f6;border:1px solid rgba(59,130,246,.25);
+                  {% elif sig.status == 'clean' %}background:rgba(16,185,129,.12);color:#10b981;border:1px solid rgba(16,185,129,.25);
+                  {% else %}background:rgba(107,114,128,.12);color:#6b7280;border:1px solid rgba(107,114,128,.25);{% endif %}">
+                  {{ sig.status }}
+                </span>
+              </div>
+              <div style="font-size:.72rem;color:var(--text3);font-family:'JetBrains Mono',monospace;">{{ sig.value }}</div>
+            </div>
+            <div style="text-align:right;flex-shrink:0;">
+              {% if sig.impact > 0 %}
+              <div style="font-family:'JetBrains Mono',monospace;font-size:.85rem;font-weight:700;color:{{ sc }};">+{{ sig.impact }}</div>
+              <div style="font-size:.6rem;color:var(--text3);font-family:'JetBrains Mono',monospace;">pts</div>
+              {% else %}
+              <div style="font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--text3);">—</div>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Linked cases -->
+      {% if result.cases %}
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1.25rem;opacity:.8;">// Linked Cases ({{ result.cases|length }})</div>
+        <table style="width:100%;border-collapse:collapse;font-size:.78rem;">
+          <thead><tr style="border-bottom:1px solid var(--border);">
+            {% for h in ['Ref','Type','Severity','Status','Amount','Date'] %}
+            <th style="text-align:left;padding:.5rem .75rem;font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;font-weight:600;">{{ h }}</th>
+            {% endfor %}
+          </tr></thead>
+          <tbody>
+          {% for c in result.cases %}
+          {% set cc = {'critical':'#ef4444','high':'#f97316','medium':'#f59e0b','low':'#3b82f6'}.get(c.severity,'#6b7280') %}
+          <tr style="border-bottom:1px solid rgba(255,255,255,.04);" onmouseover="this.style.background='rgba(255,255,255,.02)'" onmouseout="this.style.background='transparent'">
+            <td style="padding:.6rem .75rem;font-family:'JetBrains Mono',monospace;color:var(--cyan);font-size:.75rem;"><a href="/cases/{{ c.id }}" style="color:var(--cyan);text-decoration:none;">{{ c.ref }}</a></td>
+            <td style="padding:.6rem .75rem;color:var(--text2);">{{ c.type or '—' }}</td>
+            <td style="padding:.6rem .75rem;"><span style="color:{{ cc }};font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:700;text-transform:uppercase;">{{ c.severity }}</span></td>
+            <td style="padding:.6rem .75rem;color:var(--text3);font-family:'JetBrains Mono',monospace;font-size:.72rem;">{{ c.status }}</td>
+            <td style="padding:.6rem .75rem;color:var(--text2);font-family:'JetBrains Mono',monospace;">{% if c.amount %}£{{ '{:,.0f}'.format(c.amount) }}{% else %}—{% endif %}</td>
+            <td style="padding:.6rem .75rem;color:var(--text3);font-family:'JetBrains Mono',monospace;font-size:.72rem;">{{ c.date }}</td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+      {% endif %}
+
+      <!-- History -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1.25rem;opacity:.8;">// Scoring History ({{ history|length }})</div>
+        {% if history %}
+        <table style="width:100%;border-collapse:collapse;font-size:.78rem;">
+          <thead><tr style="border-bottom:1px solid var(--border);">
+            {% for h in ['Entity','Risk','Score','Cases','Scored',''] %}
+            <th style="text-align:left;padding:.5rem .75rem;font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;font-weight:600;">{{ h }}</th>
+            {% endfor %}
+          </tr></thead>
+          <tbody>
+          {% for h in history %}
+          {% set hd = h.raw_results|fromjson if h.raw_results else {} %}
+          {% set sc = {'critical':'#ef4444','high':'#f97316','medium':'#f59e0b','low':'#3b82f6','clean':'#10b981'}.get(h.overall_risk,'#6b7280') %}
+          <tr style="border-bottom:1px solid rgba(255,255,255,.04);" onmouseover="this.style.background='rgba(255,255,255,.02)'" onmouseout="this.style.background='transparent'">
+            <td style="padding:.6rem .75rem;font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--text1);">{{ h.indicator_value[:25] }}{% if h.indicator_value|length > 25 %}…{% endif %}</td>
+            <td style="padding:.6rem .75rem;"><span style="font-size:.7rem;font-weight:700;color:{{ sc }};font-family:'JetBrains Mono',monospace;text-transform:uppercase;">{{ h.overall_risk }}</span></td>
+            <td style="padding:.6rem .75rem;color:{{ sc }};font-family:'JetBrains Mono',monospace;font-weight:700;">{{ hd.get('risk_score',0) }}/100</td>
+            <td style="padding:.6rem .75rem;color:var(--text3);font-family:'JetBrains Mono',monospace;">{{ hd.get('case_count',0) }}</td>
+            <td style="padding:.6rem .75rem;color:var(--text3);font-family:'JetBrains Mono',monospace;font-size:.72rem;">{{ h.scanned_at.strftime('%d %b %H:%M') }}</td>
+            <td style="padding:.6rem .75rem;"><a href="{{ url_for('behavioural_detail', scan_id=h.id) }}" style="font-size:.7rem;font-family:'JetBrains Mono',monospace;color:var(--cyan);text-decoration:none;padding:.2rem .5rem;border:1px solid rgba(0,212,255,.2);border-radius:4px;" onmouseover="this.style.background='rgba(0,212,255,.1)'" onmouseout="this.style.background='transparent'">View →</a></td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div style="text-align:center;padding:3rem;color:var(--text3);">
+          <div style="font-size:2rem;margin-bottom:.75rem;opacity:.3;">◎</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:.78rem;">No entities scored yet. Enter a value above.</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

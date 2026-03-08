@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% block title %}IP Reputation — DefenceIQ{% endblock %}
+{% block content %}
+<div style="max-width:1100px;margin:0 auto;padding:2rem;">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem;">
+    <div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.15em;margin-bottom:.4rem;opacity:.7;">// Intelligence</div>
+      <h1 style="font-family:'Syne',sans-serif;font-size:1.75rem;font-weight:800;letter-spacing:-.02em;">IP Reputation</h1>
+      <p style="font-size:.85rem;color:var(--text2);margin-top:.35rem;font-weight:300;">Full IP enrichment — geolocation, ASN, abuse history, VPN/proxy detection, Tor exit nodes.</p>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:300px 1fr;gap:1.5rem;align-items:start;">
+
+    <!-- LEFT: Lookup form + sources -->
+    <div style="display:flex;flex-direction:column;gap:1.25rem;">
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1rem;opacity:.8;">// IP Lookup</div>
+        <form method="POST" action="{{ url_for('ip_reputation_scan') }}">
+          <div style="margin-bottom:1rem;">
+            <label style="display:block;font-size:.72rem;font-weight:600;color:var(--text2);margin-bottom:.4rem;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.05em;">IP Address</label>
+            <input type="text" name="ip_address" required value="{{ last_ip or '' }}"
+              style="width:100%;background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:.6rem .75rem;color:var(--text1);font-size:.82rem;font-family:'JetBrains Mono',monospace;box-sizing:border-box;"
+              placeholder="e.g. 185.220.101.1">
+          </div>
+          <div style="margin-bottom:1.25rem;">
+            <label style="display:block;font-size:.72rem;font-weight:600;color:var(--text2);margin-bottom:.4rem;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.05em;">Link to Case (optional)</label>
+            <input type="text" name="case_id"
+              style="width:100%;background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:.6rem .75rem;color:var(--text1);font-size:.82rem;font-family:'JetBrains Mono',monospace;box-sizing:border-box;"
+              placeholder="Case ID">
+          </div>
+          <button type="submit" style="width:100%;background:linear-gradient(135deg,#0f3460,#16213e);border:1px solid var(--cyan);border-radius:8px;padding:.7rem;color:var(--cyan);font-family:'JetBrains Mono',monospace;font-size:.78rem;font-weight:700;letter-spacing:.08em;cursor:pointer;transition:all .2s;" onmouseover="this.style.background='rgba(0,212,255,.1)'" onmouseout="this.style.background='linear-gradient(135deg,#0f3460,#16213e)'">
+            🌐 LOOKUP IP
+          </button>
+        </form>
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1rem;opacity:.8;">// Data Sources</div>
+        {% for icon,name,desc in [('🔴','AbuseIPDB','Abuse reports & score'),('🌍','IP-API','VPN/proxy/hosting detection'),('📍','IPInfo','Geolocation & ASN'),('🧅','Tor Exit Nodes','Anonymity detection'),('📊','BGP Ranking','ASN reputation')] %}
+        <div style="display:flex;align-items:center;gap:.75rem;padding:.45rem 0;border-bottom:1px solid rgba(255,255,255,.04);">
+          <span style="font-size:.9rem;width:20px;text-align:center;">{{ icon }}</span>
+          <div style="flex:1;">
+            <div style="font-size:.78rem;font-weight:600;color:var(--text1);">{{ name }}</div>
+            <div style="font-size:.65rem;color:var(--text3);font-family:'JetBrains Mono',monospace;">{{ desc }}</div>
+          </div>
+          <span style="font-size:.58rem;font-weight:700;padding:.15rem .4rem;border-radius:3px;background:rgba(16,185,129,.1);color:#10b981;border:1px solid rgba(16,185,129,.2);font-family:'JetBrains Mono',monospace;">FREE</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- RIGHT: Results -->
+    <div style="display:flex;flex-direction:column;gap:1.25rem;">
+
+      {% if result %}
+      {% set rc = {'critical':'#ef4444','high':'#f97316','medium':'#f59e0b','low':'#3b82f6','clean':'#10b981'}.get(result.overall_risk,'#6b7280') %}
+      {% set geo = result.get('geo', {}) %}
+
+      <!-- Risk banner -->
+      <div style="background:var(--card);border:1px solid {{ rc }};border-radius:12px;padding:1.5rem;position:relative;overflow:hidden;">
+        <div style="position:absolute;top:0;left:0;right:0;height:3px;background:{{ rc }};"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.25rem;">
+          <div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.3rem;">IP Analysis</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:1.2rem;font-weight:700;color:var(--text1);">{{ result.indicator_value }}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;color:{{ rc }};text-transform:uppercase;">{{ result.overall_risk }}</div>
+            <div style="font-size:.7rem;color:var(--text3);font-family:'JetBrains Mono',monospace;">{{ result.sources_checked }} sources</div>
+          </div>
+        </div>
+
+        <!-- Flag pills -->
+        <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1.25rem;">
+          {% if geo.get('is_tor') %}
+          <span style="font-size:.7rem;font-weight:700;padding:.25rem .65rem;border-radius:20px;background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3);font-family:'JetBrains Mono',monospace;">🧅 TOR EXIT NODE</span>
+          {% endif %}
+          {% if geo.get('is_proxy') %}
+          <span style="font-size:.7rem;font-weight:700;padding:.25rem .65rem;border-radius:20px;background:rgba(249,115,22,.15);color:#f97316;border:1px solid rgba(249,115,22,.3);font-family:'JetBrains Mono',monospace;">🔒 VPN / PROXY</span>
+          {% endif %}
+          {% if geo.get('is_hosting') %}
+          <span style="font-size:.7rem;font-weight:700;padding:.25rem .65rem;border-radius:20px;background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3);font-family:'JetBrains Mono',monospace;">🖥 HOSTING / DC</span>
+          {% endif %}
+          {% if not geo.get('is_tor') and not geo.get('is_proxy') and not geo.get('is_hosting') %}
+          <span style="font-size:.7rem;font-weight:700;padding:.25rem .65rem;border-radius:20px;background:rgba(16,185,129,.1);color:#10b981;border:1px solid rgba(16,185,129,.2);font-family:'JetBrains Mono',monospace;">✓ RESIDENTIAL / ISP</span>
+          {% endif %}
+        </div>
+
+        <!-- Geo grid -->
+        {% if geo %}
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;">
+          {% for label, value in [
+            ('Country', (geo.country_code or '') ~ ' ' ~ (geo.country or '—')),
+            ('City', geo.city or '—'),
+            ('ISP', (geo.isp or '—')[:30]),
+            ('ASN', geo.asn or '—'),
+            ('Organisation', (geo.org or '—')[:30]),
+            ('Coordinates', (geo.lat|string ~ ', ' ~ geo.lon|string) if geo.lat else '—')
+          ] %}
+          <div style="background:var(--panel);border-radius:7px;padding:.75rem;">
+            <div style="font-size:.62rem;color:var(--text3);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.25rem;">{{ label }}</div>
+            <div style="font-size:.78rem;font-weight:600;color:var(--text1);font-family:'JetBrains Mono',monospace;word-break:break-all;">{{ value }}</div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if result.get('threat_summary') and result.threat_summary != 'No threat matches found.' %}
+        <div style="margin-top:1rem;padding:.75rem;background:rgba(0,0,0,.2);border-radius:7px;font-size:.78rem;color:var(--text2);font-family:'JetBrains Mono',monospace;line-height:1.6;">⚠ {{ result.threat_summary }}</div>
+        {% endif %}
+      </div>
+
+      <!-- Per-source breakdown -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1.25rem;opacity:.8;">// Source Breakdown</div>
+        <div style="display:flex;flex-direction:column;gap:.75rem;">
+          {% for res in result.results %}
+          {% set rl = res.get('risk_level','clean') %}
+          {% set rcc = {'critical':'#ef4444','high':'#f97316','medium':'#f59e0b','low':'#3b82f6','clean':'#10b981','unknown':'#6b7280'}.get(rl,'#6b7280') %}
+          <div style="padding:.875rem;background:var(--panel);border-radius:8px;border-left:3px solid {{ rcc }};">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.35rem;">
+              <div style="display:flex;align-items:center;gap:.5rem;">
+                <span style="font-size:.8rem;font-weight:700;color:var(--text1);">{{ res.source }}</span>
+                {% if res.get('found') %}
+                <span style="font-size:.6rem;font-weight:700;padding:.1rem .35rem;border-radius:3px;background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3);font-family:'JetBrains Mono',monospace;">FLAGGED</span>
+                {% else %}
+                <span style="font-size:.6rem;font-weight:700;padding:.1rem .35rem;border-radius:3px;background:rgba(16,185,129,.1);color:#10b981;border:1px solid rgba(16,185,129,.2);font-family:'JetBrains Mono',monospace;">CLEAN</span>
+                {% endif %}
+              </div>
+              <span style="font-size:.7rem;font-weight:700;font-family:'JetBrains Mono',monospace;color:{{ rcc }};text-transform:uppercase;">{{ rl }}</span>
+            </div>
+            <div style="font-size:.75rem;color:var(--text3);font-family:'JetBrains Mono',monospace;">
+              {% if res.get('detail') %}{{ res.detail }}
+              {% elif res.get('reason') %}{{ res.reason }}
+              {% elif res.get('error') %}Error: {{ res.error }}
+              {% else %}No detail available{% endif %}
+            </div>
+            {% if res.get('score') is not none and res.source == 'AbuseIPDB' %}
+            <div style="margin-top:.6rem;">
+              <div style="height:4px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;">
+                <div style="height:100%;width:{{ res.score }}%;background:{{ '#ef4444' if res.score >= 75 else '#f97316' if res.score >= 50 else '#f59e0b' if res.score > 0 else '#10b981' }};border-radius:2px;transition:width .5s;"></div>
+              </div>
+              <div style="font-size:.65rem;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:.25rem;">Abuse confidence: {{ res.score }}/100</div>
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Scan history -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1.25rem;opacity:.8;">// Recent IP Lookups ({{ scans|length }})</div>
+        {% if scans %}
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;font-size:.78rem;">
+            <thead><tr style="border-bottom:1px solid var(--border);">
+              {% for h in ['IP Address','Risk','Country','ISP','Proxy/Tor','Scanned',''] %}
+              <th style="text-align:left;padding:.5rem .75rem;font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;font-weight:600;">{{ h }}</th>
+              {% endfor %}
+            </tr></thead>
+            <tbody>
+            {% for s in scans %}
+            {% set sc = {'critical':'#ef4444','high':'#f97316','medium':'#f59e0b','low':'#3b82f6','clean':'#10b981','unknown':'#6b7280'}.get(s.overall_risk,'#6b7280') %}
+            {% set rd = s.raw_results|fromjson if s.raw_results else {} %}
+            {% set sg = rd.get('geo',{}) %}
+            <tr style="border-bottom:1px solid rgba(255,255,255,.04);" onmouseover="this.style.background='rgba(255,255,255,.02)'" onmouseout="this.style.background='transparent'">
+              <td style="padding:.6rem .75rem;font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--text1);">{{ s.indicator_value }}</td>
+              <td style="padding:.6rem .75rem;"><span style="font-size:.7rem;font-weight:700;color:{{ sc }};font-family:'JetBrains Mono',monospace;text-transform:uppercase;">{{ s.overall_risk }}</span></td>
+              <td style="padding:.6rem .75rem;color:var(--text3);font-family:'JetBrains Mono',monospace;font-size:.75rem;">{{ sg.get('country','—') }}</td>
+              <td style="padding:.6rem .75rem;color:var(--text3);font-size:.75rem;">{{ (sg.get('isp','—'))[:20] }}</td>
+              <td style="padding:.6rem .75rem;">
+                {% if sg.get('is_tor') %}<span style="font-size:.65rem;color:#ef4444;font-family:'JetBrains Mono',monospace;">TOR</span>
+                {% elif sg.get('is_proxy') %}<span style="font-size:.65rem;color:#f97316;font-family:'JetBrains Mono',monospace;">PROXY</span>
+                {% elif sg.get('is_hosting') %}<span style="font-size:.65rem;color:#f59e0b;font-family:'JetBrains Mono',monospace;">HOSTING</span>
+                {% else %}<span style="font-size:.65rem;color:#10b981;font-family:'JetBrains Mono',monospace;">CLEAN</span>{% endif %}
+              </td>
+              <td style="padding:.6rem .75rem;color:var(--text3);font-family:'JetBrains Mono',monospace;font-size:.72rem;">{{ s.scanned_at.strftime('%d %b %H:%M') }}</td>
+              <td style="padding:.6rem .75rem;"><a href="{{ url_for('ip_reputation_detail', scan_id=s.id) }}" style="font-size:.7rem;font-family:'JetBrains Mono',monospace;color:var(--cyan);text-decoration:none;padding:.2rem .5rem;border:1px solid rgba(0,212,255,.2);border-radius:4px;" onmouseover="this.style.background='rgba(0,212,255,.1)'" onmouseout="this.style.background='transparent'">View →</a></td>
+            </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div style="text-align:center;padding:3rem;color:var(--text3);">
+          <div style="font-size:2rem;margin-bottom:.75rem;opacity:.3;">🌐</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:.78rem;">No IP lookups yet. Enter an IP address above.</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

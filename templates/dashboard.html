@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block content %}
+
+<!-- STATS ROW -->
+<div class="stats-grid">
+    <div class="stat-card cyan">
+        <div class="stat-icon cyan">◈</div>
+        <div><div class="stat-val">{{ stats.total_cases }}</div><div class="stat-lbl">Total Cases</div></div>
+    </div>
+    <div class="stat-card red">
+        <div class="stat-icon red">⚡</div>
+        <div><div class="stat-val">{{ stats.open_cases }}</div><div class="stat-lbl">Open Cases</div></div>
+    </div>
+    <div class="stat-card amber">
+        <div class="stat-icon amber">◬</div>
+        <div><div class="stat-val">{{ stats.critical_cases }}</div><div class="stat-lbl">Critical</div></div>
+    </div>
+    <div class="stat-card green">
+        <div class="stat-icon green">✓</div>
+        <div><div class="stat-val">{{ stats.resolved_cases }}</div><div class="stat-lbl">Resolved</div></div>
+    </div>
+</div>
+
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:1.25rem">
+    <!-- CASES TABLE -->
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">Recent Cases</span>
+            <a href="{{ url_for('new_case') }}" class="btn btn-primary btn-sm">⊕ New Case</a>
+        </div>
+        {% if cases %}
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Case Ref</th><th>Type</th><th>Indicator</th><th>Severity</th><th>Status</th><th>AI Score</th><th>Date</th></tr></thead>
+                <tbody>
+                {% for case in cases %}
+                <tr>
+                    <td><a href="{{ url_for('case_detail', case_id=case.id) }}" style="color:var(--cyan);font-weight:600;font-family:'JetBrains Mono',monospace;font-size:.78rem;text-decoration:none;text-shadow:0 0 6px var(--cyan-glow)">{{ case.case_ref }}</a></td>
+                    <td style="font-size:.8rem;color:var(--text-secondary)">{{ case.fraud_type or '—' }}</td>
+                    <td style="font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--text-muted)">{{ case.indicator_value[:18] }}{% if case.indicator_value and case.indicator_value|length > 18 %}…{% endif %}</td>
+                    <td><span class="badge badge-{{ case.severity }}">{{ case.severity }}</span></td>
+                    <td><span class="badge badge-{{ case.status.replace('_','-') }}">{{ case.status.replace('_',' ') }}</span></td>
+                    <td>
+                        {% if case.ai_score is not none %}
+                        <span style="font-weight:700;font-family:'JetBrains Mono',monospace;color:{% if case.ai_score >= 75 %}var(--red){% elif case.ai_score >= 50 %}var(--amber){% else %}var(--green){% endif %}">{{ case.ai_score|int }}</span>
+                        {% else %}<span style="color:var(--text-muted);font-size:.75rem;font-family:'JetBrains Mono',monospace">N/A</span>{% endif %}
+                    </td>
+                    <td style="font-size:.75rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace">{{ case.created_at.strftime('%d %b %Y') }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div style="text-align:center;padding:3rem;color:var(--text-muted)">
+            <div style="font-size:2rem;margin-bottom:.75rem;opacity:.4">◈</div>
+            <div style="font-weight:600;color:var(--text-secondary);margin-bottom:.5rem;font-family:'JetBrains Mono',monospace">// NO CASES FOUND</div>
+            <div style="font-size:.84rem;margin-bottom:1.25rem">Submit your first fraud indicator to begin.</div>
+            <a href="{{ url_for('new_case') }}" class="btn btn-primary btn-sm">⊕ Submit first case</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div style="display:flex;flex-direction:column;gap:1.25rem">
+
+        <!-- ORG INFO -->
+        <div class="card">
+            <div class="card-header"><span class="card-title">Organisation</span></div>
+            <div style="display:flex;flex-direction:column;gap:.65rem">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                    <span style="font-size:.75rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace">PLAN</span>
+                    <span class="plan-pill plan-{{ org.plan }}">{{ org.plan }}</span>
+                </div>
+                <div class="glow-divider"></div>
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                    <span style="font-size:.75rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace">SECTOR</span>
+                    <span style="font-size:.82rem;color:var(--text-primary);font-weight:500">{{ org.sector or '—' }}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                    <span style="font-size:.75rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace">COUNTRY</span>
+                    <span style="font-size:.82rem;color:var(--text-primary);font-weight:500">{{ org.country or '—' }}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                    <span style="font-size:.75rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace">TEAM SIZE</span>
+                    <span style="font-size:.82rem;color:var(--cyan);font-weight:600;font-family:'JetBrains Mono',monospace">{{ stats.total_members }}</span>
+                </div>
+                {% if org.plan == 'free' %}
+                <a href="{{ url_for('billing') }}" class="btn btn-primary btn-sm" style="margin-top:.25rem;justify-content:center">↑ Upgrade Plan</a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- THREAT LEVEL -->
+        <div class="card">
+            <div class="card-header"><span class="card-title">Threat Level</span></div>
+            <div style="text-align:center;padding:.5rem 0">
+                {% set threat = 'CRITICAL' if stats.critical_cases > 0 else 'HIGH' if stats.open_cases > 5 else 'MEDIUM' if stats.open_cases > 0 else 'LOW' %}
+                {% set threat_color = 'var(--red)' if threat == 'CRITICAL' else 'var(--amber)' if threat == 'HIGH' else 'var(--cyan)' if threat == 'MEDIUM' else 'var(--green)' %}
+                <div style="font-size:2rem;font-weight:700;color:{{ threat_color }};font-family:'JetBrains Mono',monospace;text-shadow:0 0 16px {{ threat_color }};letter-spacing:.1em">{{ threat }}</div>
+                <div style="font-size:.72rem;color:var(--text-muted);margin-top:.35rem;font-family:'JetBrains Mono',monospace">{{ stats.open_cases }} open / {{ stats.critical_cases }} critical</div>
+                <div class="glow-divider"></div>
+                <a href="{{ url_for('threat_intel') }}" class="btn btn-secondary btn-sm" style="width:100%;justify-content:center">◎ Run Threat Scan</a>
+            </div>
+        </div>
+
+        <!-- QUICK ACTIONS -->
+        <div class="card">
+            <div class="card-header"><span class="card-title">Quick Actions</span></div>
+            <div style="display:flex;flex-direction:column;gap:.5rem">
+                <a href="{{ url_for('new_case') }}" class="btn btn-primary btn-sm" style="justify-content:center">⊕ Submit Fraud Case</a>
+                <a href="{{ url_for('cases') }}" class="btn btn-secondary btn-sm" style="justify-content:center">◈ View All Cases</a>
+                <a href="{{ url_for('reports') }}" class="btn btn-secondary btn-sm" style="justify-content:center">≡ Compliance Reports</a>
+                <a href="{{ url_for('training') }}" class="btn btn-secondary btn-sm" style="justify-content:center">◷ Training Modules</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

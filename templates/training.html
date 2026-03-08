@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Training{% endblock %}
+{% block page_title %}Training Modules{% endblock %}
+{% block content %}
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.25rem">
+{% for module in modules %}
+{% set prog = progress.get(module.id) %}
+{% set completed = prog and prog.completed %}
+<div class="card" style="display:flex;flex-direction:column;transition:border-color .2s{% if not completed %};border-color:var(--border){% else %};border-color:rgba(0,255,136,.2){% endif %}">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1rem">
+        <div style="width:44px;height:44px;border-radius:10px;background:{% if completed %}rgba(0,255,136,.1){% else %}rgba(0,212,255,.08){% endif %};border:1px solid {% if completed %}rgba(0,255,136,.25){% else %}rgba(0,212,255,.2){% endif %};display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0">{{ module.icon or '◷' }}</div>
+        <span class="badge {% if completed %}badge-resolved{% else %}badge-open{% endif %}">{{ 'COMPLETED' if completed else 'AVAILABLE' }}</span>
+    </div>
+    <div style="font-weight:700;color:var(--text-primary);margin-bottom:.4rem;font-size:.9rem">{{ module.title }}</div>
+    <div style="font-size:.8rem;color:var(--text-secondary);line-height:1.6;flex:1;margin-bottom:1rem">{{ module.description[:120] }}{% if module.description|length > 120 %}…{% endif %}</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.875rem">
+        <div style="display:flex;gap:1rem">
+            <span style="font-size:.72rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace">⏱ {{ module.duration_minutes or 30 }}min</span>
+            {% if completed and prog.score is not none %}<span style="font-size:.72rem;color:var(--green);font-family:'JetBrains Mono',monospace">✓ {{ prog.score }}%</span>{% endif %}
+        </div>
+        <span style="font-size:.68rem;font-weight:600;padding:.15rem .45rem;border-radius:3px;font-family:'JetBrains Mono',monospace;background:rgba(168,85,247,.1);color:#c084fc;border:1px solid rgba(168,85,247,.2)">{{ module.level or 'INTERMEDIATE' }}</span>
+    </div>
+    {% if completed %}
+    <div style="height:3px;background:var(--bg-input);border-radius:100px;overflow:hidden;margin-bottom:.875rem">
+        <div style="height:100%;width:100%;background:var(--green);border-radius:100px;box-shadow:0 0 6px var(--green)"></div>
+    </div>
+    {% endif %}
+    <a href="{{ url_for('training_module', module_id=module.id) }}" class="btn {% if completed %}btn-secondary{% else %}btn-primary{% endif %} btn-sm" style="justify-content:center">
+        {{ '↻ Review Module' if completed else '→ Start Module' }}
+    </a>
+</div>
+{% endfor %}
+</div>
+{% endblock %}

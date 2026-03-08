@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}SAR Narrative Generator — DefenceIQ{% endblock %}
+{% block content %}
+<div style="max-width:900px;margin:0 auto;padding:2rem;">
+
+  <div style="margin-bottom:2rem;">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.15em;margin-bottom:.4rem;opacity:.7;">// Case {{ case.case_ref }}</div>
+    <h1 style="font-family:'Syne',sans-serif;font-size:1.75rem;font-weight:800;letter-spacing:-.02em;">AI SAR Narrative Generator</h1>
+    <p style="font-size:.85rem;color:var(--text2);margin-top:.35rem;font-weight:300;">Generate a draft UK NCA Suspicious Activity Report for <strong style="color:var(--text1);">{{ case.subject_name }}</strong> — reviewed and submitted by you.</p>
+  </div>
+
+  <!-- Case summary -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.875rem;margin-bottom:1.5rem;">
+    {% set rc = {'critical':'#ef4444','high':'#f97316','medium':'#f59e0b','low':'#3b82f6','clean':'#10b981'}.get(case.risk_level,'#6b7280') %}
+    {% for label,value,color in [
+      ('Case Ref', case.case_ref, '#06b6d4'),
+      ('Subject', case.subject_name, 'var(--text1)'),
+      ('Fraud Type', case.fraud_type or 'Unclassified', '#8b5cf6'),
+      ('Risk Level', (case.risk_level or 'unknown').upper(), rc),
+    ] %}
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1rem;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.3rem;">{{ label }}</div>
+      <div style="font-size:.85rem;font-weight:700;color:{{ color }};">{{ value }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% if not sar %}
+  <!-- Generate button -->
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.75rem;text-align:center;">
+    <div style="font-size:2.5rem;margin-bottom:1rem;">🤖</div>
+    <div style="font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;margin-bottom:.5rem;">Ready to generate SAR narrative</div>
+    <div style="font-size:.8rem;color:var(--text3);margin-bottom:1.5rem;max-width:480px;margin-left:auto;margin-right:auto;line-height:1.6;">
+      Claude will analyse all available intelligence — sanctions hits, AML flags, adverse media, KYC status, and device intelligence — and draft a UK NCA-format SAR narrative for your review.
+    </div>
+    <form method="POST" action="/cases/{{ case.id }}/sar/generate">
+      <button type="submit" id="genBtn"
+        style="background:linear-gradient(135deg,#0f3460,#16213e);border:1px solid var(--cyan);border-radius:8px;padding:.85rem 2.5rem;color:var(--cyan);font-family:'JetBrains Mono',monospace;font-size:.82rem;font-weight:700;letter-spacing:.1em;cursor:pointer;"
+        onmouseover="this.style.background='rgba(0,212,255,.1)'" onmouseout="this.style.background='linear-gradient(135deg,#0f3460,#16213e)'"
+        onclick="this.textContent='⏳ GENERATING...';this.disabled=true;">
+        ✨ GENERATE SAR NARRATIVE
+      </button>
+    </form>
+    <div style="font-size:.7rem;color:var(--text3);margin-top:1rem;font-family:'JetBrains Mono',monospace;">Powered by Claude AI · Draft for human review only · Not legal advice</div>
+  </div>
+
+  {% else %}
+
+  <!-- SAR Output -->
+  <div style="background:var(--card);border:1px solid {% if sar.success %}var(--cyan){% else %}#ef4444{% endif %};border-radius:12px;padding:1.75rem;margin-bottom:1.25rem;position:relative;overflow:hidden;">
+    <div style="position:absolute;top:0;left:0;right:0;height:3px;background:{% if sar.success %}linear-gradient(90deg,var(--cyan),#8b5cf6){% else %}#ef4444{% endif %};"></div>
+
+    {% if sar.success %}
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.25rem;">
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.25rem;">🤖 AI-Generated SAR Draft</div>
+        <div style="font-size:.72rem;color:var(--text3);font-family:'JetBrains Mono',monospace;">{{ sar.word_count }} words · Generated {{ sar.generated_at[:16].replace('T',' ') }} UTC · Review before submission</div>
+      </div>
+      <div style="display:flex;gap:.6rem;flex-wrap:wrap;">
+        <button onclick="copyNarrative()" style="background:transparent;border:1px solid rgba(0,212,255,.3);border-radius:7px;padding:.45rem .875rem;color:var(--cyan);font-family:'JetBrains Mono',monospace;font-size:.7rem;cursor:pointer;" onmouseover="this.style.background='rgba(0,212,255,.1)'" onmouseout="this.style.background='transparent'">📋 Copy</button>
+        <button onclick="printNarrative()" style="background:transparent;border:1px solid rgba(255,255,255,.15);border-radius:7px;padding:.45rem .875rem;color:var(--text2);font-family:'JetBrains Mono',monospace;font-size:.7rem;cursor:pointer;" onmouseover="this.style.background='rgba(255,255,255,.05)'" onmouseout="this.style.background='transparent'">🖨 Print</button>
+        <a href="/cases/{{ case.id }}/sar/generate" style="background:transparent;border:1px solid rgba(139,92,246,.3);border-radius:7px;padding:.45rem .875rem;color:#8b5cf6;font-family:'JetBrains Mono',monospace;font-size:.7rem;text-decoration:none;display:inline-flex;align-items:center;" onmouseover="this.style.background='rgba(139,92,246,.1)'" onmouseout="this.style.background='transparent'">↺ Regenerate</a>
+      </div>
+    </div>
+
+    {% if sar.summary %}
+    <div style="padding:.875rem;background:rgba(0,212,255,.05);border:1px solid rgba(0,212,255,.15);border-radius:8px;margin-bottom:1.25rem;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.35rem;">Alert Summary</div>
+      <div style="font-size:.82rem;color:var(--text1);font-style:italic;">{{ sar.summary }}</div>
+    </div>
+    {% endif %}
+
+    <div id="sarNarrative" style="font-size:.875rem;color:var(--text1);line-height:1.8;white-space:pre-wrap;font-family:'JetBrains Mono',monospace;background:var(--panel);border-radius:8px;padding:1.25rem;border:1px solid var(--border);">{{ sar.narrative }}</div>
+
+    <div style="margin-top:1.25rem;padding:.875rem;background:rgba(245,158,11,.05);border:1px solid rgba(245,158,11,.2);border-radius:8px;display:flex;gap:.75rem;align-items:flex-start;">
+      <span style="font-size:1rem;flex-shrink:0;">⚠️</span>
+      <div style="font-size:.75rem;color:#f59e0b;font-family:'JetBrains Mono',monospace;line-height:1.5;">This is an AI-generated draft for human review only. Always verify facts, review for accuracy, and obtain appropriate sign-off before submitting to the NCA via the UKFIU portal.</div>
+    </div>
+
+    {% else %}
+    <div style="text-align:center;padding:2rem;">
+      <div style="font-size:1.5rem;margin-bottom:.75rem;">❌</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.82rem;color:#ef4444;">Generation failed: {{ sar.error }}</div>
+      <a href="/cases/{{ case.id }}/sar/generate" style="display:inline-block;margin-top:1rem;font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--cyan);">Try again →</a>
+    </div>
+    {% endif %}
+  </div>
+
+  <div style="text-align:center;">
+    <a href="/cases/{{ case.id }}" style="font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--text3);text-decoration:none;" onmouseover="this.style.color='var(--cyan)'" onmouseout="this.style.color='var(--text3)'">← Back to case</a>
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+function copyNarrative() {
+  const text = document.getElementById('sarNarrative').innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = event.target;
+    btn.textContent = '✅ Copied';
+    setTimeout(() => btn.textContent = '📋 Copy', 2000);
+  });
+}
+function printNarrative() {
+  const content = document.getElementById('sarNarrative').innerText;
+  const w = window.open('','_blank');
+  w.document.write(`<html><head><title>SAR Narrative — {{ case.case_ref }}</title>
+  <style>body{font-family:monospace;padding:2rem;max-width:700px;line-height:1.7;} h2{margin-bottom:1rem;}</style></head>
+  <body><h2>SAR Draft — {{ case.case_ref }} — {{ case.subject_name }}</h2>
+  <pre style="white-space:pre-wrap;">${content}</pre>
+  <hr><p style="font-size:.75rem;color:#999;">Generated by DefenceIQ · Draft for review only</p></body></html>`);
+  w.print();
+}
+</script>
+{% endblock %}

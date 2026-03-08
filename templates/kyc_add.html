@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}New KYC Profile — DefenceIQ{% endblock %}
+{% block content %}
+<div style="max-width:800px;margin:0 auto;padding:2rem;">
+  <div style="margin-bottom:2rem;">
+    <a href="{{ url_for('kyc') }}" style="font-size:.72rem;color:var(--text3);text-decoration:none;font-family:'JetBrains Mono',monospace;">← Back to KYC</a>
+    <h1 style="font-family:'Syne',sans-serif;font-size:1.75rem;font-weight:800;letter-spacing:-.02em;margin-top:.5rem;">New KYC Profile</h1>
+    <p style="font-size:.85rem;color:var(--text2);margin-top:.35rem;">Risk score calculated automatically. EDD triggered for PEPs and high-risk countries.</p>
+  </div>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% for cat,msg in messages %}
+  <div style="padding:.75rem 1rem;border-radius:8px;margin-bottom:1rem;font-size:.82rem;font-family:'JetBrains Mono',monospace;{% if cat=='error' %}background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#ef4444;{% else %}background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:#10b981;{% endif %}">{{ msg }}</div>
+  {% endfor %}
+  {% endwith %}
+  <form method="POST">
+    <div style="display:grid;gap:1.5rem;">
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1.25rem;opacity:.8;">// Customer Identity</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+          {% for name,label,type,placeholder,req in [
+            ('full_name','Full Legal Name','text','John Michael Smith',1),
+            ('date_of_birth','Date of Birth','date','',0),
+            ('email','Email Address','email','john@example.com',0),
+            ('phone','Phone Number','text','+44 7700 000000',0),
+            ('id_number','ID / Passport Number','text','GB1234567',0),
+            ('customer_type','Customer Type','select','',1),
+          ] %}
+          <div>
+            <label style="display:block;font-size:.72rem;font-weight:600;color:var(--text2);margin-bottom:.4rem;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.05em;">{{ label }}{% if req %} *{% endif %}</label>
+            {% if type == 'select' %}
+            <select name="{{ name }}" style="width:100%;background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:.6rem .75rem;color:var(--text1);font-size:.82rem;font-family:'JetBrains Mono',monospace;">
+              <option value="individual">Individual</option>
+              <option value="business">Business / Corporate</option>
+              <option value="trust">Trust</option>
+            </select>
+            {% else %}
+            <input type="{{ type }}" name="{{ name }}" {% if req %}required{% endif %} placeholder="{{ placeholder }}"
+              style="width:100%;background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:.6rem .75rem;color:var(--text1);font-size:.82rem;font-family:'JetBrains Mono',monospace;box-sizing:border-box;">
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        <div style="margin-top:1rem;">
+          <label style="display:block;font-size:.72rem;font-weight:600;color:var(--text2);margin-bottom:.4rem;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.05em;">Address</label>
+          <textarea name="address" rows="2" placeholder="Full residential/registered address…" style="width:100%;background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:.6rem .75rem;color:var(--text1);font-size:.82rem;font-family:'JetBrains Mono',monospace;box-sizing:border-box;resize:vertical;"></textarea>
+        </div>
+      </div>
+
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1.25rem;opacity:.8;">// Risk Factors</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+          {% for name,label in [('nationality','Nationality'),('country_of_residence','Country of Residence')] %}
+          <div>
+            <label style="display:block;font-size:.72rem;font-weight:600;color:var(--text2);margin-bottom:.4rem;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.05em;">{{ label }}</label>
+            <input type="text" name="{{ name }}" placeholder="e.g. United Kingdom" style="width:100%;background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:.6rem .75rem;color:var(--text1);font-size:.82rem;font-family:'JetBrains Mono',monospace;box-sizing:border-box;">
+          </div>
+          {% endfor %}
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+          <label style="display:flex;align-items:center;gap:.75rem;padding:.875rem;background:var(--panel);border-radius:8px;border:1px solid var(--border);cursor:pointer;">
+            <input type="checkbox" name="pep_status" value="1" style="width:16px;height:16px;accent-color:var(--cyan);">
+            <div>
+              <div style="font-size:.78rem;font-weight:600;color:var(--text1);">Politically Exposed Person</div>
+              <div style="font-size:.65rem;color:var(--text3);font-family:'JetBrains Mono',monospace;">Current or former PEP + family</div>
+            </div>
+          </label>
+          <label style="display:flex;align-items:center;gap:.75rem;padding:.875rem;background:var(--panel);border-radius:8px;border:1px solid var(--border);cursor:pointer;">
+            <input type="checkbox" name="sanctions_hit" value="1" style="width:16px;height:16px;accent-color:var(--cyan);">
+            <div>
+              <div style="font-size:.78rem;font-weight:600;color:var(--text1);">Sanctions List Match</div>
+              <div style="font-size:.65rem;color:var(--text3);font-family:'JetBrains Mono',monospace;">UN/HMT/OFAC sanctions hit</div>
+            </div>
+          </label>
+        </div>
+        <div style="margin-top:1rem;">
+          <label style="display:block;font-size:.72rem;font-weight:600;color:var(--text2);margin-bottom:.4rem;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.05em;">Notes</label>
+          <textarea name="notes" rows="2" placeholder="Additional notes or context…" style="width:100%;background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:.6rem .75rem;color:var(--text1);font-size:.82rem;font-family:'JetBrains Mono',monospace;box-sizing:border-box;resize:vertical;"></textarea>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:1rem;">
+        <button type="submit" style="flex:1;background:linear-gradient(135deg,#0f3460,#16213e);border:1px solid var(--cyan);border-radius:8px;padding:.75rem;color:var(--cyan);font-family:'JetBrains Mono',monospace;font-size:.82rem;font-weight:700;letter-spacing:.08em;cursor:pointer;" onmouseover="this.style.background='rgba(0,212,255,.1)'" onmouseout="this.style.background='linear-gradient(135deg,#0f3460,#16213e)'">◈ CREATE & SCORE</button>
+        <a href="{{ url_for('kyc') }}" style="padding:.75rem 1.5rem;border:1px solid var(--border);border-radius:8px;color:var(--text3);font-family:'JetBrains Mono',monospace;font-size:.78rem;text-decoration:none;display:flex;align-items:center;">Cancel</a>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}

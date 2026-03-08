@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+{% block title %}Adverse Media Screening — DefenceIQ{% endblock %}
+{% block content %}
+<div style="max-width:1100px;margin:0 auto;padding:2rem;">
+
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem;">
+    <div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.15em;margin-bottom:.4rem;opacity:.7;">// Intelligence</div>
+      <h1 style="font-family:'Syne',sans-serif;font-size:1.75rem;font-weight:800;letter-spacing:-.02em;">Adverse Media Screening</h1>
+      <p style="font-size:.85rem;color:var(--text2);margin-top:.35rem;font-weight:300;">Screen names and entities against news sources for fraud, corruption, sanctions, and criminal activity.</p>
+    </div>
+    {% if stats %}
+    <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
+      {% for label,value,color in [('Total Screened', stats.total, '#06b6d4'),('Adverse Hits', stats.hits, '#ef4444'),('Critical', stats.critical, '#f97316')] %}
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:.75rem 1.25rem;text-align:center;min-width:90px;">
+        <div style="font-family:'Syne',sans-serif;font-size:1.25rem;font-weight:800;color:{{ color }};">{{ value }}</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-top:.2rem;">{{ label }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  <div style="display:grid;grid-template-columns:300px 1fr;gap:1.5rem;align-items:start;">
+
+    <!-- LEFT: Form -->
+    <div style="display:flex;flex-direction:column;gap:1.25rem;">
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1rem;opacity:.8;">// Screen Name / Entity</div>
+        <form method="POST" action="/adverse-media/screen">
+          <div style="margin-bottom:1rem;">
+            <label style="display:block;font-size:.72rem;font-weight:600;color:var(--text2);margin-bottom:.4rem;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.05em;">Full Name or Entity *</label>
+            <input type="text" name="query" required value="{{ last_query or '' }}"
+              style="width:100%;background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:.6rem .75rem;color:var(--text1);font-size:.82rem;font-family:'JetBrains Mono',monospace;box-sizing:border-box;"
+              placeholder="e.g. John Smith, Acme Corp">
+          </div>
+          <div style="margin-bottom:1.25rem;">
+            <label style="display:block;font-size:.72rem;font-weight:600;color:var(--text2);margin-bottom:.4rem;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.05em;">Link to Case (optional)</label>
+            <input type="text" name="case_id"
+              style="width:100%;background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:.6rem .75rem;color:var(--text1);font-size:.82rem;font-family:'JetBrains Mono',monospace;box-sizing:border-box;"
+              placeholder="Case ID">
+          </div>
+          <button type="submit" style="width:100%;background:linear-gradient(135deg,#0f3460,#16213e);border:1px solid var(--cyan);border-radius:8px;padding:.7rem;color:var(--cyan);font-family:'JetBrains Mono',monospace;font-size:.78rem;font-weight:700;letter-spacing:.08em;cursor:pointer;" onmouseover="this.style.background='rgba(0,212,255,.1)'" onmouseout="this.style.background='linear-gradient(135deg,#0f3460,#16213e)'">
+            📰 SCREEN NOW
+          </button>
+        </form>
+      </div>
+
+      <!-- Sources -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1rem;opacity:.8;">// Sources</div>
+        {% for icon,name,desc,color in [
+          ('📰','Google News RSS','Real-time global news','#3b82f6'),
+          ('🔵','The Guardian','UK investigative journalism','#8b5cf6'),
+          ('📡','NewsAPI','500+ news publishers','#06b6d4'),
+          ('🤖','Claude AI','Relevance classifier','#10b981'),
+        ] %}
+        <div style="padding:.75rem;background:var(--panel);border-radius:8px;border-left:3px solid {{ color }};margin-bottom:.6rem;">
+          <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.2rem;">
+            <span>{{ icon }}</span>
+            <span style="font-size:.8rem;font-weight:700;color:var(--text1);">{{ name }}</span>
+            <span style="font-size:.58rem;font-weight:700;padding:.1rem .35rem;border-radius:3px;background:rgba(16,185,129,.1);color:#10b981;border:1px solid rgba(16,185,129,.2);font-family:'JetBrains Mono',monospace;">FREE</span>
+          </div>
+          <div style="font-size:.68rem;color:var(--text3);font-family:'JetBrains Mono',monospace;">{{ desc }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- RIGHT: Results -->
+    <div style="display:flex;flex-direction:column;gap:1.25rem;">
+
+      {% if result %}
+      {% set rc = {'critical':'#ef4444','high':'#f97316','medium':'#f59e0b','low':'#3b82f6','clean':'#10b981'}.get(result.overall_risk,'#6b7280') %}
+
+      <!-- Risk banner -->
+      <div style="background:var(--card);border:1px solid {{ rc }};border-radius:12px;padding:1.5rem;position:relative;overflow:hidden;">
+        <div style="position:absolute;top:0;left:0;right:0;height:3px;background:{{ rc }};"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+          <div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.3rem;">Adverse Media Result</div>
+            <div style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;color:var(--text1);">{{ result.query }}</div>
+            <div style="font-size:.72rem;color:var(--text3);margin-top:.25rem;font-family:'JetBrains Mono',monospace;">{{ result.total_articles }} articles · {{ result.sources_hit }}/{{ result.sources_checked }} sources hit</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;color:{{ rc }};text-transform:uppercase;">
+              {% if result.overall_risk == 'clean' %}✓ CLEAR{% else %}⚠ {{ result.overall_risk.upper() }}{% endif %}
+            </div>
+            <div style="font-size:.7rem;color:{{ rc }};font-family:'JetBrains Mono',monospace;">{{ result.risk_score }}/100</div>
+          </div>
+        </div>
+
+        {% if result.ai_assessment %}
+        <div style="margin-top:1rem;padding:.875rem;background:rgba(0,212,255,.05);border:1px solid rgba(0,212,255,.15);border-radius:8px;">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem;">🤖 AI Assessment</div>
+          <div style="font-size:.8rem;color:var(--text1);line-height:1.5;">{{ result.ai_assessment.get('summary','') }}</div>
+          {% if result.ai_assessment.get('primary_concern') %}
+          <div style="margin-top:.4rem;font-size:.7rem;color:var(--text3);font-family:'JetBrains Mono',monospace;">Primary concern: {{ result.ai_assessment.primary_concern }}</div>
+          {% endif %}
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Articles -->
+      {% if result.articles %}
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1.25rem;opacity:.8;">// Adverse Articles ({{ result.total_articles }})</div>
+        <div style="display:flex;flex-direction:column;gap:.875rem;">
+          {% for article in result.articles %}
+          <div style="padding:.875rem;background:var(--panel);border-radius:8px;border-left:3px solid #ef4444;">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:.4rem;">
+              <div style="font-size:.82rem;font-weight:700;color:var(--text1);line-height:1.4;">{{ article.title }}</div>
+              <div style="font-size:.65rem;color:var(--text3);white-space:nowrap;font-family:'JetBrains Mono',monospace;flex-shrink:0;">{{ article.date }}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;">
+              <span style="font-size:.68rem;color:var(--text3);font-family:'JetBrains Mono',monospace;">{{ article.source }}</span>
+              {% for kw in article.keywords[:3] %}
+              <span style="font-size:.62rem;font-weight:700;padding:.1rem .35rem;border-radius:3px;background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.2);font-family:'JetBrains Mono',monospace;">{{ kw }}</span>
+              {% endfor %}
+              {% if article.url %}
+              <a href="{{ article.url }}" target="_blank" rel="noopener" style="font-size:.65rem;color:var(--cyan);font-family:'JetBrains Mono',monospace;text-decoration:none;margin-left:auto;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">Read → </a>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Per source breakdown -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1.25rem;opacity:.8;">// Source Breakdown</div>
+        <div style="display:flex;flex-direction:column;gap:.6rem;">
+          {% for src in result.results %}
+          {% set sc = '#10b981' if not src.found else '#ef4444' %}
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:.75rem;background:var(--panel);border-radius:7px;border-left:3px solid {{ sc }};">
+            <div>
+              <div style="font-size:.8rem;font-weight:700;color:var(--text1);">{{ src.source }}</div>
+              <div style="font-size:.7rem;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:.15rem;">{{ src.get('detail','')[:70] }}</div>
+            </div>
+            {% if src.found %}
+            <span style="font-size:.65rem;font-weight:700;padding:.2rem .5rem;border-radius:4px;background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.2);font-family:'JetBrains Mono',monospace;flex-shrink:0;">HIT</span>
+            {% else %}
+            <span style="font-size:.65rem;font-weight:700;padding:.2rem .5rem;border-radius:4px;background:rgba(16,185,129,.1);color:#10b981;border:1px solid rgba(16,185,129,.2);font-family:'JetBrains Mono',monospace;flex-shrink:0;">CLEAR</span>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- History -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1.25rem;opacity:.8;">// Recent Screenings ({{ history|length }})</div>
+        {% if history %}
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;font-size:.78rem;">
+            <thead><tr style="border-bottom:1px solid var(--border);">
+              {% for h in ['Name','Risk','Articles','Sources','Screened',''] %}
+              <th style="text-align:left;padding:.5rem .75rem;font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;font-weight:600;">{{ h }}</th>
+              {% endfor %}
+            </tr></thead>
+            <tbody>
+            {% for h in history %}
+            {% set hd = h.raw_results|fromjson if h.raw_results else {} %}
+            {% set sc = {'critical':'#ef4444','high':'#f97316','medium':'#f59e0b','low':'#3b82f6','clean':'#10b981'}.get(h.overall_risk,'#6b7280') %}
+            <tr style="border-bottom:1px solid rgba(255,255,255,.04);" onmouseover="this.style.background='rgba(255,255,255,.02)'" onmouseout="this.style.background='transparent'">
+              <td style="padding:.6rem .75rem;font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--text1);">{{ h.indicator_value[:28] }}{% if h.indicator_value|length > 28 %}…{% endif %}</td>
+              <td style="padding:.6rem .75rem;"><span style="font-size:.7rem;font-weight:700;color:{{ sc }};font-family:'JetBrains Mono',monospace;text-transform:uppercase;">{{ h.overall_risk }}</span></td>
+              <td style="padding:.6rem .75rem;color:var(--text3);font-family:'JetBrains Mono',monospace;">{{ hd.get('total_articles',0) }}</td>
+              <td style="padding:.6rem .75rem;color:var(--text3);font-family:'JetBrains Mono',monospace;">{{ hd.get('sources_hit',0) }}/{{ hd.get('sources_checked',3) }}</td>
+              <td style="padding:.6rem .75rem;color:var(--text3);font-family:'JetBrains Mono',monospace;font-size:.72rem;">{{ h.scanned_at.strftime('%d %b %H:%M') }}</td>
+              <td style="padding:.6rem .75rem;"><a href="/adverse-media/{{ h.id }}" style="font-size:.7rem;font-family:'JetBrains Mono',monospace;color:var(--cyan);text-decoration:none;padding:.2rem .5rem;border:1px solid rgba(0,212,255,.2);border-radius:4px;" onmouseover="this.style.background='rgba(0,212,255,.1)'" onmouseout="this.style.background='transparent'">View →</a></td>
+            </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div style="text-align:center;padding:3rem;color:var(--text3);">
+          <div style="font-size:2rem;margin-bottom:.75rem;opacity:.3;">📰</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:.78rem;">No screenings yet. Enter a name above.</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Fraud Cases{% endblock %}
+{% block page_title %}Fraud Cases{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <span class="card-title">Case Register ({{ cases|length }})</span>
+        <div style="display:flex;gap:.5rem;align-items:center">
+            <form method="GET" style="display:flex;gap:.5rem">
+                <select name="severity" class="form-control" style="width:auto;padding:.3rem .65rem;font-size:.75rem" onchange="this.form.submit()">
+                    <option value="">All Severity</option>
+                    <option value="critical" {% if request.args.get('severity')=='critical' %}selected{% endif %}>Critical</option>
+                    <option value="high" {% if request.args.get('severity')=='high' %}selected{% endif %}>High</option>
+                    <option value="medium" {% if request.args.get('severity')=='medium' %}selected{% endif %}>Medium</option>
+                    <option value="low" {% if request.args.get('severity')=='low' %}selected{% endif %}>Low</option>
+                </select>
+                <select name="status" class="form-control" style="width:auto;padding:.3rem .65rem;font-size:.75rem" onchange="this.form.submit()">
+                    <option value="">All Status</option>
+                    <option value="open" {% if request.args.get('status')=='open' %}selected{% endif %}>Open</option>
+                    <option value="investigating" {% if request.args.get('status')=='investigating' %}selected{% endif %}>Investigating</option>
+                    <option value="resolved" {% if request.args.get('status')=='resolved' %}selected{% endif %}>Resolved</option>
+                    <option value="false_positive" {% if request.args.get('status')=='false_positive' %}selected{% endif %}>False Positive</option>
+                </select>
+            </form>
+            <a href="{{ url_for('new_case') }}" class="btn btn-primary btn-sm">⊕ New Case</a>
+        </div>
+    </div>
+    {% if cases %}
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Case Ref</th><th>Indicator Type</th><th>Indicator Value</th><th>Fraud Type</th><th>Severity</th><th>Status</th><th>AI Score</th><th>Date</th><th></th></tr></thead>
+            <tbody>
+            {% for case in cases %}
+            <tr>
+                <td><a href="{{ url_for('case_detail', case_id=case.id) }}" style="color:var(--cyan);font-weight:600;font-family:'JetBrains Mono',monospace;font-size:.78rem;text-decoration:none">{{ case.case_ref }}</a></td>
+                <td><span style="font-size:.7rem;background:rgba(0,212,255,.08);padding:.15rem .45rem;border-radius:3px;font-weight:600;color:var(--cyan);font-family:'JetBrains Mono',monospace;border:1px solid rgba(0,212,255,.2)">{{ case.indicator_type or '—' }}</span></td>
+                <td style="font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--text-muted);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ case.indicator_value or '—' }}</td>
+                <td style="font-size:.8rem;color:var(--text-secondary)">{{ case.fraud_type or '—' }}</td>
+                <td><span class="badge badge-{{ case.severity }}">{{ case.severity }}</span></td>
+                <td><span class="badge badge-{{ case.status.replace('_','-') }}">{{ case.status.replace('_',' ') }}</span></td>
+                <td>{% if case.ai_score is not none %}<span style="font-weight:700;font-family:'JetBrains Mono',monospace;color:{% if case.ai_score >= 75 %}var(--red){% elif case.ai_score >= 50 %}var(--amber){% else %}var(--green){% endif %}">{{ case.ai_score|int }}/100</span>{% else %}<span style="color:var(--text-muted);font-size:.72rem;font-family:'JetBrains Mono',monospace">PENDING</span>{% endif %}</td>
+                <td style="font-size:.75rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace">{{ case.created_at.strftime('%d %b %Y') }}</td>
+                <td><a href="{{ url_for('case_detail', case_id=case.id) }}" class="btn btn-secondary btn-sm">View</a></td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:4rem;color:var(--text-muted)">
+        <div style="font-size:2.5rem;margin-bottom:1rem;opacity:.3">◈</div>
+        <div style="font-weight:600;color:var(--text-secondary);margin-bottom:.5rem;font-family:'JetBrains Mono',monospace">// NO CASES FOUND</div>
+        <div style="font-size:.84rem;margin-bottom:1.5rem">{% if request.args %}Adjust filters or clear search{% else %}Submit your first fraud indicator{% endif %}</div>
+        <a href="{{ url_for('new_case') }}" class="btn btn-primary btn-sm">⊕ Submit Case</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

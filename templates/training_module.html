@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}{{ module.title }}{% endblock %}
+{% block page_title %}{{ module.title }}{% endblock %}
+{% block content %}
+<div style="max-width:800px">
+    <div class="card" style="margin-bottom:1.25rem">
+        <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.25rem;padding-bottom:1rem;border-bottom:1px solid #f1f5f9">
+            <span style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;background:#eff6ff;color:#2563eb;padding:.25rem .75rem;border-radius:4px">{{ module.category }}</span>
+            <span style="font-size:.7rem;font-weight:600;color:#64748b;background:#f1f5f9;padding:.25rem .75rem;border-radius:4px">{{ module.difficulty }}</span>
+            <span style="font-size:.78rem;color:#94a3b8;margin-left:auto">⏱ {{ module.duration }} min</span>
+        </div>
+        <div style="font-size:.9375rem;color:#334155;line-height:1.8">{{ module.content }}</div>
+    </div>
+
+    {% if not progress.completed %}
+    <div class="card">
+        <div class="card-header"><span class="card-title">Complete this module</span></div>
+        <p style="font-size:.875rem;color:#64748b;margin-bottom:1.25rem">Answer this question to complete the module and record your score.</p>
+        <div style="background:#f8fafc;border-radius:10px;padding:1.25rem;margin-bottom:1.25rem">
+            <div style="font-weight:700;color:#0f172a;margin-bottom:1rem;font-size:.925rem">Based on what you learned, what is the most important first step when fraud is detected?</div>
+            <form method="POST" action="{{ url_for('complete_module', module_id=module.id) }}">
+                <div style="display:flex;flex-direction:column;gap:.6rem;margin-bottom:1.25rem">
+                    <label style="display:flex;align-items:center;gap:.75rem;padding:.75rem;border:1.5px solid #e2e8f0;border-radius:8px;cursor:pointer;font-size:.875rem">
+                        <input type="radio" name="answer" value="a"> Immediately close all accounts
+                    </label>
+                    <label style="display:flex;align-items:center;gap:.75rem;padding:.75rem;border:1.5px solid #e2e8f0;border-radius:8px;cursor:pointer;font-size:.875rem">
+                        <input type="radio" name="answer" value="b"> Contain the threat and document the incident
+                    </label>
+                    <label style="display:flex;align-items:center;gap:.75rem;padding:.75rem;border:1.5px solid #e2e8f0;border-radius:8px;cursor:pointer;font-size:.875rem">
+                        <input type="radio" name="answer" value="c"> Wait for more evidence before acting
+                    </label>
+                    <label style="display:flex;align-items:center;gap:.75rem;padding:.75rem;border:1.5px solid #e2e8f0;border-radius:8px;cursor:pointer;font-size:.875rem">
+                        <input type="radio" name="answer" value="d"> Notify the press immediately
+                    </label>
+                </div>
+                <input type="hidden" name="score" id="score-val" value="0">
+                <button type="submit" class="btn btn-primary" onclick="calcScore(event)">Submit &amp; Complete →</button>
+            </form>
+        </div>
+    </div>
+    {% else %}
+    <div class="card" style="text-align:center;padding:2rem">
+        <div style="font-size:2.5rem;margin-bottom:.75rem">🎓</div>
+        <div style="font-weight:700;color:#0f172a;font-size:1.1rem;margin-bottom:.35rem">Module Completed!</div>
+        <div style="font-size:.875rem;color:#64748b;margin-bottom:1.25rem">You scored <strong style="color:#16a34a">{{ progress.score }}%</strong> on this module.</div>
+        <a href="{{ url_for('training') }}" class="btn btn-primary btn-sm">← Back to Training</a>
+    </div>
+    {% endif %}
+</div>
+<script>
+function calcScore(e) {
+    const selected = document.querySelector('input[name="answer"]:checked');
+    if (!selected) { e.preventDefault(); alert('Please select an answer.'); return; }
+    document.getElementById('score-val').value = selected.value === 'b' ? 100 : 40;
+}
+</script>
+{% endblock %}

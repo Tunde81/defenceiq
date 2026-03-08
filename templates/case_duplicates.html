@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}Duplicate Indicators — DefenceIQ{% endblock %}
+{% block content %}
+<div style="max-width:1100px;margin:0 auto;padding:2rem;">
+
+  <!-- Header -->
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem;">
+    <div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.15em;margin-bottom:.4rem;opacity:.7;">// Intelligence</div>
+      <h1 style="font-family:'Syne',sans-serif;font-size:1.75rem;font-weight:800;letter-spacing:-.02em;">Duplicate Indicators</h1>
+      <p style="font-size:.85rem;color:var(--text2);margin-top:.35rem;font-weight:300;">Indicators reported across multiple cases — potential repeat offenders or linked fraud patterns.</p>
+    </div>
+    <a href="{{ url_for('cases') }}" style="padding:.55rem 1.25rem;border:1px solid var(--border);border-radius:7px;font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--text2);text-decoration:none;transition:all .2s;"
+       onmouseover="this.style.borderColor='var(--cyan)';this.style.color='var(--cyan)'"
+       onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">← All Cases</a>
+  </div>
+
+  {% if not grouped %}
+  <!-- Empty state -->
+  <div style="text-align:center;padding:5rem 2rem;background:var(--card);border:1px solid var(--border);border-radius:12px;">
+    <div style="font-size:2.5rem;margin-bottom:1rem;">✓</div>
+    <div style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;margin-bottom:.5rem;">No Duplicate Indicators</div>
+    <p style="font-size:.85rem;color:var(--text2);font-weight:300;">All indicators across your cases are unique. Good hygiene.</p>
+  </div>
+
+  {% else %}
+
+  <!-- Summary bar -->
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:2rem;">
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.25rem;text-align:center;">
+      <div style="font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:var(--amber);">{{ grouped|length }}</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-top:.25rem;">Duplicate Groups</div>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.25rem;text-align:center;">
+      <div style="font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:var(--red);">{{ grouped|sum(attribute='count') }}</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-top:.25rem;">Total Cases Affected</div>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.25rem;text-align:center;">
+      <div style="font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:var(--cyan);">{{ grouped[0].count if grouped else 0 }}</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-top:.25rem;">Highest Repeat Count</div>
+    </div>
+  </div>
+
+  <!-- Duplicate groups -->
+  <div style="display:flex;flex-direction:column;gap:1.25rem;">
+    {% for group in grouped %}
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color .2s;"
+         onmouseover="this.style.borderColor='var(--border-glow)'" onmouseout="this.style.borderColor='var(--border)'">
+
+      <!-- Group header -->
+      <div style="background:var(--panel);padding:1rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;">
+        <div style="display:flex;align-items:center;gap:.875rem;">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:.62rem;padding:.2rem .6rem;border-radius:4px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+            {% if group.indicator_type == 'bvn' %}background:rgba(168,85,247,.15);color:#c084fc;border:1px solid rgba(168,85,247,.25);
+            {% elif group.indicator_type == 'ip' %}background:rgba(255,59,92,.12);color:#ff7090;border:1px solid rgba(255,59,92,.22);
+            {% elif group.indicator_type == 'email' %}background:rgba(0,212,255,.1);color:var(--cyan);border:1px solid rgba(0,212,255,.2);
+            {% elif group.indicator_type == 'phone' %}background:rgba(245,158,11,.1);color:#fbbf24;border:1px solid rgba(245,158,11,.2);
+            {% elif group.indicator_type == 'account' %}background:rgba(0,255,136,.1);color:var(--green);border:1px solid rgba(0,255,136,.2);
+            {% else %}background:rgba(100,149,191,.1);color:var(--text2);border:1px solid rgba(100,149,191,.2);{% endif %}">
+            {{ group.indicator_type|upper }}
+          </span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:.88rem;font-weight:600;color:var(--text1);">{{ group.indicator_value }}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:1rem;">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--amber);font-weight:600;">
+            ⚠ {{ group.count }} cases
+          </span>
+          <a href="{{ url_for('cases') }}?indicator_value={{ group.indicator_value|urlencode }}"
+             style="font-size:.72rem;color:var(--cyan);font-family:'JetBrains Mono',monospace;text-decoration:none;opacity:.8;">
+            Filter cases ↗
+          </a>
+        </div>
+      </div>
+
+      <!-- Cases in this group -->
+      <div style="padding:.75rem 1.5rem 1rem;">
+        <div style="display:flex;flex-direction:column;gap:.4rem;">
+          {% for c in group.cases %}
+          <a href="{{ url_for('case_detail', case_id=c.id) }}"
+             style="display:grid;grid-template-columns:140px 1fr 90px 70px 80px 70px;align-items:center;gap:.75rem;padding:.6rem .75rem;border:1px solid var(--border);border-radius:7px;text-decoration:none;transition:all .15s;background:transparent;"
+             onmouseover="this.style.background='rgba(0,212,255,.03)';this.style.borderColor='rgba(0,212,255,.15)'"
+             onmouseout="this.style.background='transparent';this.style.borderColor='var(--border)'">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--cyan);font-weight:600;">{{ c.case_ref }}</span>
+            <span style="font-size:.78rem;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ c.fraud_type or '—' }}</span>
+            <span style="font-size:.65rem;padding:.12rem .4rem;border-radius:3px;font-weight:700;font-family:'JetBrains Mono',monospace;text-align:center;
+              {% if c.severity == 'critical' %}background:rgba(255,59,92,.15);color:#ff7090;
+              {% elif c.severity == 'high' %}background:rgba(245,158,11,.15);color:#fbbf24;
+              {% elif c.severity == 'medium' %}background:rgba(0,212,255,.12);color:var(--cyan);
+              {% else %}background:rgba(0,255,136,.12);color:var(--green);{% endif %}">
+              {{ c.severity|upper }}
+            </span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:.75rem;font-weight:700;text-align:center;
+              {% if c.ai_score %}{% if c.ai_score >= 75 %}color:var(--red);{% elif c.ai_score >= 50 %}color:var(--amber);{% else %}color:var(--green);{% endif %}{% else %}color:var(--text3);{% endif %}">
+              {% if c.ai_score %}{{ c.ai_score|int }}/100{% else %}—{% endif %}
+            </span>
+            <span style="font-size:.65rem;padding:.12rem .5rem;border-radius:3px;font-family:'JetBrains Mono',monospace;text-align:center;
+              {% if c.status == 'open' %}background:rgba(255,59,92,.1);color:#ff7090;
+              {% elif c.status == 'investigating' %}background:rgba(245,158,11,.1);color:#fbbf24;
+              {% elif c.status == 'resolved' %}background:rgba(0,255,136,.1);color:var(--green);
+              {% else %}background:rgba(100,149,191,.1);color:var(--text2);{% endif %}">
+              {{ c.status|upper }}
+            </span>
+            <span style="font-size:.65rem;color:var(--text3);font-family:'JetBrains Mono',monospace;text-align:right;">{{ c.created_at.strftime('%d %b %Y') }}</span>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

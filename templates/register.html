@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Register{% endblock %}
+{% block public_content %}
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg-base);padding:2rem">
+    <div style="width:100%;max-width:540px">
+        <div style="text-align:center;margin-bottom:2rem">
+            <div style="display:inline-flex;align-items:center;gap:.75rem;margin-bottom:1.25rem">
+                <div style="width:42px;height:42px;background:linear-gradient(135deg,var(--cyan-dim),#004477);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;box-shadow:0 0 20px var(--cyan-glow)">🛡️</div>
+                <div style="font-size:1.5rem;font-weight:700;color:var(--white)">Defence<span style="color:var(--cyan);text-shadow:0 0 10px var(--cyan-glow-strong)">IQ</span></div>
+            </div>
+            <div style="font-size:.78rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace;letter-spacing:.08em">// REGISTER ORGANISATION</div>
+        </div>
+        <div class="card">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ 'error' if category == 'error' else category }}">{{ message }}</div>
+                {% endfor %}
+            {% endwith %}
+            <form method="POST">
+                <div style="font-size:.68rem;font-weight:600;color:var(--cyan);text-transform:uppercase;letter-spacing:.12em;font-family:'JetBrains Mono',monospace;margin-bottom:.875rem">// Account Details</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Full Name *</label>
+                        <input type="text" name="full_name" class="form-control" placeholder="Analyst name" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email *</label>
+                        <input type="email" name="email" class="form-control" placeholder="you@org.com" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password *</label>
+                    <input type="password" name="password" class="form-control" placeholder="Min 8 characters" required>
+                </div>
+                <div class="glow-divider"></div>
+                <div style="font-size:.68rem;font-weight:600;color:var(--cyan);text-transform:uppercase;letter-spacing:.12em;font-family:'JetBrains Mono',monospace;margin-bottom:.875rem">// Organisation Details</div>
+                <div class="form-group">
+                    <label class="form-label">Organisation Name *</label>
+                    <input type="text" name="org_name" class="form-control" placeholder="Bank / Fintech / Institution" required>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Sector</label>
+                        <select name="sector" class="form-control">
+                            <option value="Banking">Banking</option>
+                            <option value="Fintech">Fintech</option>
+                            <option value="Insurance">Insurance</option>
+                            <option value="Microfinance">Microfinance</option>
+                            <option value="Telecommunications">Telecommunications</option>
+                            <option value="Government">Government</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Country</label>
+                        <select name="country" class="form-control">
+                            <option value="Nigeria">Nigeria</option>
+                            <option value="Ghana">Ghana</option>
+                            <option value="Kenya">Kenya</option>
+                            <option value="South Africa">South Africa</option>
+                            <option value="United Kingdom">United Kingdom</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:.5rem">⊕ Create Account →</button>
+            </form>
+            <div class="glow-divider"></div>
+            <div style="text-align:center;font-size:.82rem;color:var(--text-muted)">
+                Already registered? <a href="{{ url_for('login') }}" style="color:var(--cyan);text-decoration:none;font-weight:500">Sign in →</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

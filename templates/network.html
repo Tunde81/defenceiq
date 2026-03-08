@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% block title %}Network Analysis — DefenceIQ{% endblock %}
+{% block content %}
+<div style="max-width:1200px;margin:0 auto;padding:2rem;">
+
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem;">
+    <div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.15em;margin-bottom:.4rem;opacity:.7;">// Intelligence</div>
+      <h1 style="font-family:'Syne',sans-serif;font-size:1.75rem;font-weight:800;letter-spacing:-.02em;">Network & Entity Link Analysis</h1>
+      <p style="font-size:.85rem;color:var(--text2);margin-top:.35rem;font-weight:300;">Uncover hidden connections between cases, KYC profiles, transactions, devices, and threat intelligence.</p>
+    </div>
+    {% if stats %}
+    <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
+      {% for label,value,color in [('Cases',stats.cases,'#06b6d4'),('KYC',stats.kyc,'#8b5cf6'),('Transactions',stats.transactions,'#f59e0b'),('Scans',stats.scans,'#10b981')] %}
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:.75rem 1rem;text-align:center;min-width:80px;">
+        <div style="font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:800;color:{{ color }};">{{ value }}</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-top:.15rem;">{{ label }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Search -->
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin-bottom:1.5rem;">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1rem;opacity:.8;">// Search Entity or Indicator</div>
+    <form method="POST" action="/network/search" style="display:flex;gap:.75rem;align-items:flex-end;flex-wrap:wrap;">
+      <div style="flex:1;min-width:260px;">
+        <label style="display:block;font-size:.72rem;font-weight:600;color:var(--text2);margin-bottom:.4rem;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.05em;">Name / Email / IP / Domain / Device Hash</label>
+        <input type="text" name="query" required value="{{ last_query or '' }}"
+          style="width:100%;background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:.6rem .75rem;color:var(--text1);font-size:.85rem;font-family:'JetBrains Mono',monospace;box-sizing:border-box;"
+          placeholder="e.g. john@example.com, 192.168.1.1, ACME Corp">
+      </div>
+      <button type="submit" style="background:linear-gradient(135deg,#0f3460,#16213e);border:1px solid var(--cyan);border-radius:8px;padding:.65rem 1.5rem;color:var(--cyan);font-family:'JetBrains Mono',monospace;font-size:.78rem;font-weight:700;letter-spacing:.08em;cursor:pointer;white-space:nowrap;" onmouseover="this.style.background='rgba(0,212,255,.1)'" onmouseout="this.style.background='linear-gradient(135deg,#0f3460,#16213e)'">
+        🔗 ANALYSE NETWORK
+      </button>
+    </form>
+  </div>
+
+  {% if result %}
+  {% set rc = {'critical':'#ef4444','high':'#f97316','medium':'#f59e0b','low':'#3b82f6','clean':'#10b981'}.get(result.network_risk,'#6b7280') %}
+
+  <!-- Risk banner -->
+  <div style="background:var(--card);border:1px solid {{ rc }};border-radius:12px;padding:1.5rem;margin-bottom:1.5rem;position:relative;overflow:hidden;">
+    <div style="position:absolute;top:0;left:0;right:0;height:3px;background:{{ rc }};"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.3rem;">Network Risk Assessment</div>
+        <div style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;color:var(--text1);">{{ result.query }}</div>
+        <div style="font-size:.72rem;color:var(--text3);margin-top:.25rem;font-family:'JetBrains Mono',monospace;">{{ result.node_count }} entities · {{ result.edge_count }} connections found</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;color:{{ rc }};text-transform:uppercase;">
+          {% if result.network_risk == 'clean' %}✓ NO LINKS{% else %}⚠ {{ result.network_risk.upper() }}{% endif %}
+        </div>
+        <div style="font-size:.7rem;color:{{ rc }};font-family:'JetBrains Mono',monospace;">Network score: {{ result.network_score }}/100</div>
+      </div>
+    </div>
+  </div>
+
+  {% if result.node_count == 0 %}
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:3rem;text-align:center;color:var(--text3);">
+    <div style="font-size:2rem;margin-bottom:.75rem;opacity:.3;">🔗</div>
+    <div style="font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;margin-bottom:.5rem;">No entities found</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:.75rem;">No matching records found across cases, KYC profiles, transactions, or threat scans.</div>
+  </div>
+
+  {% else %}
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+
+    <!-- Node list -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1.25rem;opacity:.8;">// Entities Found ({{ result.node_count }})</div>
+      <div style="display:flex;flex-direction:column;gap:.6rem;max-height:420px;overflow-y:auto;">
+        {% for node in result.nodes %}
+        {% set nc = {'critical':'#ef4444','high':'#f97316','medium':'#f59e0b','low':'#3b82f6','clean':'#10b981'}.get(node.risk,'#6b7280') %}
+        {% set type_colors = {'case':'#06b6d4','kyc':'#8b5cf6','transaction':'#f59e0b','threat_scan':'#ef4444','device':'#6b7280'} %}
+        {% set tc = type_colors.get(node.type,'#6b7280') %}
+        <div style="padding:.75rem;background:var(--panel);border-radius:8px;border-left:3px solid {{ nc }};">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.3rem;">
+            <div style="display:flex;align-items:center;gap:.5rem;">
+              <span style="font-size:.62rem;font-weight:700;padding:.15rem .4rem;border-radius:3px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;color:{{ tc }};border:1px solid {{ tc }}33;background:{{ tc }}11;">{{ node.type.replace('_',' ') }}</span>
+              <span style="font-size:.8rem;font-weight:700;color:var(--text1);font-family:'JetBrains Mono',monospace;">{{ node.label }}</span>
+            </div>
+            <span style="font-size:.65rem;font-weight:700;color:{{ nc }};font-family:'JetBrains Mono',monospace;text-transform:uppercase;">{{ node.risk }}</span>
+          </div>
+          {% if node.meta %}
+          <div style="font-size:.68rem;color:var(--text3);font-family:'JetBrains Mono',monospace;">
+            {% for k,v in node.meta.items() %}{% if v and v != [] %}{{ k }}: {{ v }}  {% endif %}{% endfor %}
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Connections list -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1.25rem;opacity:.8;">// Connections ({{ result.edge_count }})</div>
+      {% if result.edges %}
+      <div style="display:flex;flex-direction:column;gap:.6rem;max-height:420px;overflow-y:auto;">
+        {% for edge in result.edges %}
+        <div style="padding:.75rem;background:var(--panel);border-radius:8px;display:flex;align-items:center;gap:.75rem;">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--text1);font-weight:600;">{{ edge.source.replace('_',' #') }}</span>
+          <div style="flex:1;display:flex;align-items:center;gap:.4rem;">
+            <div style="flex:1;height:1px;background:rgba(0,212,255,.3);"></div>
+            <span style="font-size:.62rem;font-weight:700;padding:.15rem .45rem;border-radius:3px;background:rgba(0,212,255,.08);color:var(--cyan);border:1px solid rgba(0,212,255,.2);font-family:'JetBrains Mono',monospace;white-space:nowrap;">{{ edge.label }}</span>
+            <div style="flex:1;height:1px;background:rgba(0,212,255,.3);"></div>
+          </div>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--text1);font-weight:600;">{{ edge.target.replace('_',' #') }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div style="text-align:center;padding:2rem;color:var(--text3);">
+        <div style="font-size:1.5rem;margin-bottom:.5rem;opacity:.3;">○—○</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.75rem;">Entities found but no cross-links detected.</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+  {% endif %}
+
+  <!-- Info box when no search -->
+  {% if not result %}
+  <div style="background:var(--card);border:1px solid rgba(0,212,255,.2);border-radius:12px;padding:1.5rem;display:flex;gap:1.25rem;align-items:flex-start;">
+    <div style="font-size:1.5rem;flex-shrink:0;">🔗</div>
+    <div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.4rem;">// How Network Analysis Works</div>
+      <div style="font-size:.82rem;color:var(--text2);line-height:1.6;">
+        Search any indicator — a name, email address, IP, domain, or device hash — and DefenceIQ maps every related entity across your entire dataset. Shared emails link fraud cases to KYC profiles. Shared IPs connect transactions to device fingerprints. The same device hash across multiple accounts flags potential mule networks. All connections are drawn from your own data — no external APIs required.
+      </div>
+      <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-top:1rem;">
+        {% for label,color in [('Fraud Cases','#06b6d4'),('KYC Profiles','#8b5cf6'),('AML Transactions','#f59e0b'),('Threat Scans','#ef4444'),('Device Fingerprints','#6b7280')] %}
+        <span style="font-size:.68rem;font-weight:700;padding:.2rem .6rem;border-radius:4px;font-family:'JetBrains Mono',monospace;color:{{ color }};border:1px solid {{ color }}33;background:{{ color }}11;">{{ label }}</span>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
