@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard — DefenceIQ{% endblock %}
+
+{% block content %}
+<style>
+.adm { font-family: 'Plus Jakarta Sans', sans-serif; }
+.adm-topbar { display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;padding-bottom:1rem;border-bottom:1px solid rgba(0,212,255,.12); }
+.adm-title { font-size:1.5rem;font-weight:800;color:#fff;letter-spacing:-.02em; }
+.adm-title span { color:#00d4ff; }
+.adm-badge { font-family:'JetBrains Mono',monospace;font-size:.65rem;font-weight:700;background:rgba(255,59,92,.1);border:1px solid rgba(255,59,92,.3);color:#ff3b5c;border-radius:4px;padding:.2rem .55rem;letter-spacing:.08em; }
+.adm-ts { font-family:'JetBrains Mono',monospace;font-size:.7rem;color:#4a7a9b; }
+.adm-section { margin-bottom:2.5rem; }
+.adm-section-head { display:flex;align-items:center;gap:.6rem;font-family:'JetBrains Mono',monospace;font-size:.7rem;font-weight:700;color:#00d4ff;text-transform:uppercase;letter-spacing:.12em;margin-bottom:1rem;padding-bottom:.5rem;border-bottom:1px solid rgba(0,212,255,.1); }
+.adm-cards { display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:1rem;margin-bottom:1.5rem; }
+.adm-card { background:#0c1e35;border:1px solid #122440;border-radius:8px;padding:1.1rem 1.25rem;position:relative;overflow:hidden; }
+.adm-card::before { content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--adm-accent,#00d4ff); }
+.adm-card-label { font-family:'JetBrains Mono',monospace;font-size:.62rem;color:#4a7a9b;text-transform:uppercase;letter-spacing:.1em;margin-bottom:.5rem; }
+.adm-card-val { font-size:2rem;font-weight:800;color:#fff;line-height:1;margin-bottom:.25rem; }
+.adm-card-sub { font-size:.75rem;color:#6a9bbf; }
+.adm-card.green  { --adm-accent:#00ff88; } .adm-card.green .adm-card-val  { color:#00ff88; }
+.adm-card.amber  { --adm-accent:#f59e0b; } .adm-card.amber .adm-card-val  { color:#f59e0b; }
+.adm-card.red    { --adm-accent:#ff3b5c; } .adm-card.red   .adm-card-val  { color:#ff3b5c; }
+.adm-card.purple { --adm-accent:#a855f7; } .adm-card.purple .adm-card-val { color:#a855f7; }
+.adm-charts { display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem; }
+.adm-chart-box { background:#0c1e35;border:1px solid #122440;border-radius:8px;padding:1.25rem; }
+.adm-chart-title { font-family:'JetBrains Mono',monospace;font-size:.68rem;color:#6a9bbf;margin-bottom:1rem;text-transform:uppercase;letter-spacing:.1em; }
+.adm-chart-wrap { position:relative;height:180px; }
+.adm-table-wrap { background:#0c1e35;border:1px solid #122440;border-radius:8px;overflow:hidden;margin-bottom:1rem; }
+.adm-table { width:100%;border-collapse:collapse;font-size:.8rem; }
+.adm-table th { background:#081527;color:#4a7a9b;font-family:'JetBrains Mono',monospace;font-size:.63rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;padding:.75rem 1rem;text-align:left;border-bottom:1px solid #122440; }
+.adm-table td { padding:.65rem 1rem;border-bottom:1px solid rgba(18,36,64,.6);color:#ddeeff;vertical-align:middle; }
+.adm-table tr:last-child td { border-bottom:none; }
+.adm-table tr:hover td { background:rgba(0,212,255,.03); }
+.sev { display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.62rem;font-weight:700;padding:.15rem .5rem;border-radius:3px; }
+.sev-critical { background:rgba(255,59,92,.15);color:#ff3b5c;border:1px solid rgba(255,59,92,.3); }
+.sev-high     { background:rgba(245,158,11,.12);color:#f59e0b;border:1px solid rgba(245,158,11,.3); }
+.sev-medium   { background:rgba(0,212,255,.1);  color:#00d4ff;border:1px solid rgba(0,212,255,.25); }
+.sev-low      { background:rgba(0,255,136,.08); color:#00ff88;border:1px solid rgba(0,255,136,.2); }
+.dot { display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:.4rem; }
+.dot-green { background:#00ff88;box-shadow:0 0 6px #00ff88; }
+.adm-feed { background:#0c1e35;border:1px solid #122440;border-radius:8px;max-height:420px;overflow-y:auto; }
+.adm-feed-item { display:flex;gap:1rem;align-items:flex-start;padding:.75rem 1.1rem;border-bottom:1px solid rgba(18,36,64,.6); }
+.adm-feed-item:last-child { border-bottom:none; }
+.adm-feed-ts  { font-family:'JetBrains Mono',monospace;font-size:.62rem;color:#4a7a9b;white-space:nowrap;min-width:110px; }
+.adm-feed-action { font-family:'JetBrains Mono',monospace;font-size:.68rem;font-weight:700;color:#00d4ff;min-width:180px; }
+.adm-feed-detail { font-size:.78rem;color:#6a9bbf; }
+.adm-sys-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1rem; }
+.adm-sys-box { background:#0c1e35;border:1px solid #122440;border-radius:8px;padding:1.1rem 1.25rem; }
+.adm-sys-box-title { font-family:'JetBrains Mono',monospace;font-size:.63rem;color:#4a7a9b;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.75rem; }
+.adm-sys-row { display:flex;justify-content:space-between;font-size:.8rem;color:#6a9bbf;padding:.25rem 0;border-bottom:1px solid rgba(18,36,64,.5); }
+.adm-sys-row:last-child { border-bottom:none; }
+.adm-sys-val { color:#ddeeff;font-family:'JetBrains Mono',monospace;font-size:.78rem; }
+.adm-tbar { display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;border-bottom:1px solid #122440; }
+.adm-tbar-title { font-family:'JetBrains Mono',monospace;font-size:.68rem;color:#6a9bbf;text-transform:uppercase;letter-spacing:.08em; }
+.adm-search { background:#081527;border:1px solid #1a3a6a;border-radius:4px;color:#ddeeff;font-size:.8rem;padding:.35rem .75rem;outline:none;width:220px; }
+.adm-search:focus { border-color:#00d4ff; }
+.scan-bar-wrap { margin-top:.75rem; }
+.scan-bar-row  { margin-bottom:.6rem; }
+.scan-bar-label { display:flex;justify-content:space-between;font-size:.75rem;color:#6a9bbf;margin-bottom:.2rem; }
+.scan-bar-label span:last-child { color:#ddeeff; }
+.scan-bar-bg   { background:#081527;border-radius:3px;height:6px;overflow:hidden; }
+.scan-bar-fill { height:6px;border-radius:3px;background:linear-gradient(90deg,#0891b2,#00d4ff); }
+@media(max-width:900px){.adm-charts{grid-template-columns:1fr;}.adm-cards{grid-template-columns:repeat(2,1fr);}}
+</style>
+<div class="adm">
+  <div class="adm-topbar">
+    <div style="display:flex;align-items:center;gap:.75rem;">
+      <div class="adm-title">Admin <span>Dashboard</span></div>
+      <div class="adm-badge">RESTRICTED ACCESS</div>
+    </div>
+    <div class="adm-ts">{{ now.strftime('%d %b %Y %H:%M') }} UTC &nbsp;·&nbsp;
+      <a href="{{ url_for('admin_dashboard') }}" style="color:#00d4ff;text-decoration:none;">↺ Refresh</a>
+    </div>
+  </div>
+
+  <div class="adm-section">
+    <div class="adm-section-head">👤 User Statistics</div>
+    <div class="adm-cards">
+      <div class="adm-card"><div class="adm-card-label">Total Users</div><div class="adm-card-val">{{ total_users }}</div><div class="adm-card-sub">All registered accounts</div></div>
+      <div class="adm-card green"><div class="adm-card-label">Active Users</div><div class="adm-card-val">{{ active_users }}</div><div class="adm-card-sub">Enabled accounts</div></div>
+      <div class="adm-card amber"><div class="adm-card-label">New — 30 Days</div><div class="adm-card-val">{{ new_users_30d }}</div><div class="adm-card-sub">Signups this month</div></div>
+      <div class="adm-card purple"><div class="adm-card-label">New — 7 Days</div><div class="adm-card-val">{{ new_users_7d }}</div><div class="adm-card-sub">Signups this week</div></div>
+    </div>
+    <div class="adm-chart-box" style="margin-bottom:1.5rem;">
+      <div class="adm-chart-title">New Signups — Last 14 Days</div>
+      <div class="adm-chart-wrap"><canvas id="signupChart"></canvas></div>
+    </div>
+    <div class="adm-table-wrap">
+      <div class="adm-tbar">
+        <div class="adm-tbar-title">All Users (latest 100)</div>
+        <input class="adm-search" placeholder="Search name, email, org…" oninput="filterTable('userTbody',this.value)">
+      </div>
+      <table class="adm-table">
+        <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Role</th><th>Organisation</th><th>Joined</th></tr></thead>
+        <tbody id="userTbody">
+          {% for user, org in users_list %}
+          <tr>
+            <td style="color:#4a7a9b;font-family:'JetBrains Mono',monospace;font-size:.7rem;">{{ user.id }}</td>
+            <td>{{ user.name or '—' }}</td>
+            <td style="font-family:'JetBrains Mono',monospace;font-size:.72rem;color:#6a9bbf;">{{ user.email }}</td>
+            <td><span class="sev {% if user.role == 'admin' %}sev-high{% else %}sev-medium{% endif %}">{{ user.role or 'user' }}</span></td>
+            <td>{{ org.name if org else '—' }}</td>
+            <td style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:#4a7a9b;">{{ user.created_at.strftime('%d %b %Y') if user.created_at else '—' }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6" style="text-align:center;color:#4a7a9b;padding:2rem;">No users found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="adm-section">
+    <div class="adm-section-head">🏢 Organisation Statistics</div>
+    <div class="adm-cards">
+      <div class="adm-card"><div class="adm-card-label">Total Orgs</div><div class="adm-card-val">{{ total_orgs }}</div><div class="adm-card-sub">Registered organisations</div></div>
+    </div>
+    <div class="adm-table-wrap">
+      <div class="adm-tbar">
+        <div class="adm-tbar-title">All Organisations (latest 50)</div>
+        <input class="adm-search" placeholder="Search org name…" oninput="filterTable('orgTbody',this.value)">
+      </div>
+      <table class="adm-table">
+        <thead><tr><th>ID</th><th>Name</th><th>Plan</th><th>API Key (truncated)</th><th>Created</th></tr></thead>
+        <tbody id="orgTbody">
+          {% for org in orgs_list %}
+          <tr>
+            <td style="color:#4a7a9b;font-family:'JetBrains Mono',monospace;font-size:.7rem;">{{ org.id }}</td>
+            <td style="font-weight:600;">{{ org.name }}</td>
+            <td><span class="sev {% if org.plan == 'enterprise' %}sev-critical{% elif org.plan == 'professional' %}sev-high{% else %}sev-medium{% endif %}">{{ org.plan or 'free' }}</span></td>
+            <td style="font-family:'JetBrains Mono',monospace;font-size:.65rem;color:#4a7a9b;">{% if org.api_key %}{{ org.api_key[:28] }}…{% else %}—{% endif %}</td>
+            <td style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:#4a7a9b;">{{ org.created_at.strftime('%d %b %Y') if org.created_at else '—' }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" style="text-align:center;color:#4a7a9b;padding:2rem;">No organisations found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="adm-section">
+    <div class="adm-section-head">🔎 Cases &amp; Fraud Intelligence</div>
+    <div class="adm-cards">
+      <div class="adm-card"><div class="adm-card-label">Total Cases</div><div class="adm-card-val">{{ total_cases }}</div><div class="adm-card-sub">All fraud cases</div></div>
+      <div class="adm-card red"><div class="adm-card-label">Critical</div><div class="adm-card-val">{{ severity_map.get('critical',0) }}</div><div class="adm-card-sub">Severity: critical</div></div>
+      <div class="adm-card amber"><div class="adm-card-label">High</div><div class="adm-card-val">{{ severity_map.get('high',0) }}</div><div class="adm-card-sub">Severity: high</div></div>
+      <div class="adm-card"><div class="adm-card-label">Medium</div><div class="adm-card-val">{{ severity_map.get('medium',0) }}</div><div class="adm-card-sub">Severity: medium</div></div>
+      <div class="adm-card green"><div class="adm-card-label">Low</div><div class="adm-card-val">{{ severity_map.get('low',0) }}</div><div class="adm-card-sub">Severity: low</div></div>
+      <div class="adm-card purple"><div class="adm-card-label">Cases — 7 Days</div><div class="adm-card-val">{{ cases_7d }}</div><div class="adm-card-sub">New this week</div></div>
+    </div>
+    <div class="adm-charts">
+      <div class="adm-chart-box">
+        <div class="adm-chart-title">Cases Created — Last 14 Days</div>
+        <div class="adm-chart-wrap"><canvas id="casesChart"></canvas></div>
+      </div>
+      <div class="adm-chart-box">
+        <div class="adm-chart-title">Severity Breakdown</div>
+        <div class="adm-chart-wrap"><canvas id="severityChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+  <div class="adm-section">
+    <div class="adm-section-head">⚡ Platform Activity</div>
+    <div class="adm-cards">
+      <div class="adm-card"><div class="adm-card-label">Total Scans</div><div class="adm-card-val">{{ total_scans }}</div><div class="adm-card-sub">Intelligence scans run</div></div>
+      <div class="adm-card green"><div class="adm-card-label">Scans — 7 Days</div><div class="adm-card-val">{{ scans_7d }}</div><div class="adm-card-sub">This week</div></div>
+      <div class="adm-card amber"><div class="adm-card-label">AML Transactions</div><div class="adm-card-val">{{ total_aml }}</div><div class="adm-card-sub">Total monitored</div></div>
+      <div class="adm-card red"><div class="adm-card-label">AML Flagged</div><div class="adm-card-val">{{ aml_flagged }}</div><div class="adm-card-sub">Unreviewed flags</div></div>
+      <div class="adm-card purple"><div class="adm-card-label">KYC Profiles</div><div class="adm-card-val">{{ total_kyc }}</div><div class="adm-card-sub">CDD/EDD profiles</div></div>
+    </div>
+    {% if scan_type_map %}
+    <div class="adm-chart-box">
+      <div class="adm-chart-title">Scans by Module Type</div>
+      <div class="scan-bar-wrap">
+        {% set max_scans = scan_type_map.values() | max %}
+        {% for stype, count in scan_type_map.items() | sort(attribute='1', reverse=True) %}
+        <div class="scan-bar-row">
+          <div class="scan-bar-label"><span>{{ stype | replace('_',' ') | title }}</span><span>{{ count }}</span></div>
+          <div class="scan-bar-bg"><div class="scan-bar-fill" style="width:{{ (count / max_scans * 100) | round }}%"></div></div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="adm-section">
+    <div class="adm-section-head">🖥 System Health</div>
+    <div class="adm-sys-grid">
+      <div class="adm-sys-box">
+        <div class="adm-sys-box-title">Server Status</div>
+        <div class="adm-sys-row"><span>Status</span><span class="adm-sys-val"><span class="dot dot-green"></span>Online</span></div>
+        <div class="adm-sys-row"><span>Uptime</span><span class="adm-sys-val">{{ uptime_raw }}</span></div>
+        <div class="adm-sys-row"><span>Environment</span><span class="adm-sys-val">Production</span></div>
+      </div>
+      <div class="adm-sys-box">
+        <div class="adm-sys-box-title">PostgreSQL</div>
+        <div class="adm-sys-row"><span>DB Size</span><span class="adm-sys-val">{{ db_size }}</span></div>
+        <div class="adm-sys-row"><span>Users</span><span class="adm-sys-val">{{ total_users }}</span></div>
+        <div class="adm-sys-row"><span>Orgs</span><span class="adm-sys-val">{{ total_orgs }}</span></div>
+        <div class="adm-sys-row"><span>Cases</span><span class="adm-sys-val">{{ total_cases }}</span></div>
+        <div class="adm-sys-row"><span>Scans</span><span class="adm-sys-val">{{ total_scans }}</span></div>
+      </div>
+      <div class="adm-sys-box">
+        <div class="adm-sys-box-title">Disk Usage</div>
+        <div class="adm-sys-row"><span>Total</span><span class="adm-sys-val">{{ disk_info.size }}</span></div>
+        <div class="adm-sys-row"><span>Used</span><span class="adm-sys-val">{{ disk_info.used }}</span></div>
+        <div class="adm-sys-row"><span>Free</span><span class="adm-sys-val">{{ disk_info.avail }}</span></div>
+        <div class="adm-sys-row"><span>Usage</span><span class="adm-sys-val" style="color:{% if disk_info.pct|replace('%','')|int > 80 %}#ff3b5c{% elif disk_info.pct|replace('%','')|int > 60 %}#f59e0b{% else %}#00ff88{% endif %}">{{ disk_info.pct }}</span></div>
+      </div>
+      <div class="adm-sys-box">
+        <div class="adm-sys-box-title">Memory (RAM)</div>
+        <div class="adm-sys-row"><span>Total</span><span class="adm-sys-val">{{ mem_info.total }}</span></div>
+        <div class="adm-sys-row"><span>Used</span><span class="adm-sys-val">{{ mem_info.used }}</span></div>
+        <div class="adm-sys-row"><span>Free</span><span class="adm-sys-val">{{ mem_info.free }}</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="adm-section">
+    <div class="adm-section-head">📋 Audit Log — Last 50 Events</div>
+    <div class="adm-feed">
+      {% for entry in audit_log %}
+      <div class="adm-feed-item">
+        <div class="adm-feed-ts">{{ entry.created_at.strftime('%d %b %H:%M') if entry.created_at else '—' }}</div>
+        <div class="adm-feed-action">{{ entry.action }}</div>
+        <div class="adm-feed-detail">{{ entry.detail or '' }}{% if entry.ip_address %} · <span style="color:#2d4f72;">{{ entry.ip_address }}</span>{% endif %}</div>
+      </div>
+      {% else %}
+      <div style="text-align:center;padding:2rem;color:#4a7a9b;font-family:'JetBrains Mono',monospace;font-size:.75rem;">No audit log entries found.</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+const baseOpts = {
+  responsive:true,maintainAspectRatio:false,
+  plugins:{legend:{display:false}},
+  scales:{
+    x:{grid:{color:'rgba(18,36,64,.8)'},ticks:{color:'#4a7a9b',font:{family:'JetBrains Mono',size:10}}},
+    y:{grid:{color:'rgba(18,36,64,.8)'},ticks:{color:'#4a7a9b',font:{family:'JetBrains Mono',size:10},stepSize:1},beginAtZero:true}
+  }
+};
+const signupData = {{ signup_chart | tojson }};
+new Chart(document.getElementById('signupChart'),{
+  type:'bar',
+  data:{labels:signupData.map(d=>d.date),datasets:[{data:signupData.map(d=>d.count),backgroundColor:'rgba(0,212,255,.2)',borderColor:'#00d4ff',borderWidth:1,borderRadius:3}]},
+  options:baseOpts
+});
+const casesData = {{ cases_chart | tojson }};
+new Chart(document.getElementById('casesChart'),{
+  type:'line',
+  data:{labels:casesData.map(d=>d.date),datasets:[{data:casesData.map(d=>d.count),borderColor:'#00ff88',backgroundColor:'rgba(0,255,136,.06)',borderWidth:2,fill:true,tension:.4,pointBackgroundColor:'#00ff88',pointRadius:3}]},
+  options:baseOpts
+});
+new Chart(document.getElementById('severityChart'),{
+  type:'doughnut',
+  data:{
+    labels:['Critical','High','Medium','Low'],
+    datasets:[{data:[{{ severity_map.get('critical',0) }},{{ severity_map.get('high',0) }},{{ severity_map.get('medium',0) }},{{ severity_map.get('low',0) }}],backgroundColor:['rgba(255,59,92,.7)','rgba(245,158,11,.7)','rgba(0,212,255,.5)','rgba(0,255,136,.4)'],borderColor:['#ff3b5c','#f59e0b','#00d4ff','#00ff88'],borderWidth:1}]
+  },
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'right',labels:{color:'#6a9bbf',font:{family:'JetBrains Mono',size:10},padding:12,boxWidth:10}}}}
+});
+function filterTable(tbodyId,q){
+  q=q.toLowerCase();
+  document.querySelectorAll('#'+tbodyId+' tr').forEach(r=>r.style.display=r.textContent.toLowerCase().includes(q)?'':'none');
+}
+</script>
+{% endblock %}
